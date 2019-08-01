@@ -18,6 +18,8 @@ library(fasterize)
 source("polyOpt.R")
 
 # find polygon and pixel level population density statistics
+pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
+PBC <- st_as_sf(PBCshp)
 sf_pop_den_ <- pop_den_
 
 sf_out <- sptpolyOpt(sf_pop_den_, PBC, plot=FALSE)
