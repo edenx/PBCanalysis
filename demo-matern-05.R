@@ -42,14 +42,14 @@ exact.cov = k52(u,1)
 #exact.cov = k52(u,1)
 #exact.cov <- exp(-.5*u^2) # exp(-u)
 # 
-# # build an approximation similar to the 1 dimension
-# m <- 1000 # number of frequencies
-# freq <- stats::rt(m*2, df=5)   # using length scale of 0.25
-# # create a matrix of the frequencies with row corresponding to the freq_1 \ldots freq_m
-# mat.freq <- matrix(freq, nrow=m, ncol=2, byrow=FALSE)
-# PHI <- cbind(cos(xy%*%t(mat.freq)), sin(xy%*%t(mat.freq)))  
-# CovAprox <- (PHI%*%t(PHI))/m
-# # lattice::levelplot(CovAprox)
+# build an approximation similar to the 1 dimension
+m <- 1000 # number of frequencies
+freq <- stats::rt(m*2, df=5)   # using length scale of 0.25
+# create a matrix of the frequencies with row corresponding to the freq_1 \ldots freq_m
+mat.freq <- matrix(freq, nrow=m, ncol=2, byrow=FALSE)
+PHI <- cbind(cos(xy%*%t(mat.freq)), sin(xy%*%t(mat.freq)))
+CovAprox <- (PHI%*%t(PHI))/m
+lattice::levelplot(CovAprox)
 
 library(mvnfast)
 # Building a better approximation by increasing the number of frequency
@@ -58,10 +58,10 @@ m2 <- 100000 # number of frequencies
 freq2 <- rmvt(n=m2, c(0,0), diag(1,2), df=5) # stats::rt(m2*2, df=1)    # using length scale of 0.25
 # create a matrix of the frequencies with row corresponding to the freq_1 \ldots freq_m
 mat.freq2 <- matrix(freq2, nrow=m2) #, ncol=2, byrow=FALSE)
-PHI2 <- cbind(cos(xy%*%t(freq2)), sin(xy%*%t(mat.freq2))) 
+PHI2 <- cbind(cos(scale(xy)%*%t(mat.freq2)), sin(scale(xy)%*%t(mat.freq2))) 
 CovAprox2 <- (PHI2%*%t(PHI2))/m2
 
-# lattice::levelplot(CovAprox2)
+lattice::levelplot(CovAprox2)
 # 
 # #################
 # plot(u[1,],exact.cov[1,],ty="p")
@@ -80,12 +80,12 @@ lines(u[1,ii],CovAprox[1,ii],col="blue")
 lines(u[1,ii],CovAprox2[1,ii],col="red")
 
 
-ii = ii + sqrt(n)
+ii = ii + 2*sqrt(n)
 plot(u[1,ii],exact.cov[1,ii],ty="l")
 lines(u[1,ii],CovAprox[1,ii],col="blue")
 lines(u[1,ii],CovAprox2[1,ii],col="red")
 
-ii = ii + sqrt(n)
+ii = ii + 2*sqrt(n)
 plot(u[1,ii],exact.cov[1,ii],ty="l")
 lines(u[1,ii],CovAprox[1,ii],col="blue")
 lines(u[1,ii],CovAprox2[1,ii],col="red")

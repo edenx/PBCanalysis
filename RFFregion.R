@@ -1,77 +1,86 @@
-# Given Region i, we find centroid of the computational cell x (vector length n)
-n <- sample(seq(from=5, to=30), size=504, replace=TRUE)      # number of cells within each region (504 in total)
-w <- sapply(n, function(x) runif(x))
-lis_centr <- sapply(n, function(x) cbind(scale(seq(-2,2,length.out=x)), scale(seq(-2,2,length.out=x))))
-lis_wcentr <- sapply(seq(504), function(x) cbind(lis_centr[[x]], w[[x]]))
-
-
 library(randtoolbox)
 library(SDALGCP)
 library(sf)
 library(raster)
 library(tidyverse)
 
-source("polyOpt.R")
-
         # ====================================================================== #
-        #                        find coordinates and weights
+        #       find empirical population density distribution per polygon
         # ====================================================================== #
 
 pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
-sf_pop_den_ <- pop_den_
 
-sf_out <- sptpolyOpt(sf_pop_den_, PBC, plot=FALSE)
-sf_pixel <- sf_out$sf.pixel
-sf_centr <- sf_pixel[c("LSOA04CD", "X", "normNZ")]
+sf_poly_ <- raster::extract(pop_den_, PBC, cellnumbers=TRUE, small=TRUE,
+                            weights=TRUE, normalizeWeights=FALSE)
+# may be unnecessary info
+cell_index <- sapply(sf_poly_, function(x) x[,1])
+poly_index <- rep(seq(1,545), times=sapply(cell_index, length))
 
-df_centr <- as.data.frame(sf_centr) %>% 
-        rename(count=X, W=normNZ) %>%
-        # centering the coordinates
-        cbind(., as.data.frame(scale(st_coordinates(sf_centr)))) %>%
-        mutate(geometry=NULL)
+lis_centr <- sapply(sf_poly_, function(x) cbind(x, scale(coordinates(pop_den_))[x[,1],]))
 
-# drop unused levels
-                                      # WTF????? NA????
-                                      # unique(sf_out$sf.poly$LSOA04CD)
-                                      # E01008430 is NA!!!!!!!
-                                      # But unique levels of df_centr is 544 instead of 545
+# for every intersected cells with polygon, normalise the population density per polygon
+check.0 <- function(x) {
+        w_val <- x[,"value"]*x[,"weight"]
+        if(any(x[,"value"] != 0)){
+                cbind(x, W=x[,"value"]/sum(w_val))}
+        else{cbind(x, W=x[,"value"])}
+}
+lis_wcentr <- sapply(lis_centr, check.0)
 
-# temp <- levels(droplevels(df_centr$LSOA04CD))
-df_centr$LSOA04CD <- droplevels(df_centr$LSOA04CD)
+# check the distribution of population density 
+hist(unlist(sapply(lis_wcentr, function(x) x[, "W"])))
+table(unlist(sapply(lis_wcentr, function(x) sum(x[, "W"]))))
+table(unlist(sapply(lis_wcentr, function(x) sum(x[, "W"]*x[,"weight"]))))
 
-# create list of pixels within each polygon (504 in total)
-lis_wcentr <- split(df_centr, df_centr$LSOA04CD)
-count <- sapply(split(df_centr[,2], df_centr$LSOA04CD), unique)
+
+names(lis_wcentr) <- seq(1,length(lis_wcentr))
+
+# sp_count <- raster::extract(sim_lgcp, PBC, small=TRUE, sp=TRUE, fun=sum)
+# count <- sp_count[]$NZ
+
+count <- PBC$X
+
 
         # ====================================================================== #
         #                       find Fourier Features
         # ====================================================================== #
 
-# using the inversion -- quasi monte carlo integration;
-# Matern 5-2 kernel -- student 5-2 sdf
-alpha <- 0.5    # bandwidth
-m <- 100
-                                        # Parameterisation of Matern 5-2???????????? 
-Omega <- qt(halton(m,2), 5, 1/alpha)
-
 rff.region <- function(wcentr, Omega, m, alpha){
-        centr <- as.matrix(wcentr[,c("X", "Y")])
+        centr <- as.matrix(wcentr[,c("x", "y")])
+        # population density empirical distribution
         w <- as.matrix(wcentr[,c("W")])
-        
+        h <- as.matrix(wcentr[,c("weight")])
+
         # Projection - combine data with sample frequencies
         proj <- centr %*% t(Omega) 
-        # Fourier feature for a given area
-        phi <- sqrt(1/m) * colSums(t(w) %*% cbind(cos(proj/alpha), sin(proj/alpha))) 
         
+        # Fourier feature for a given area
+        # print(w*h)
+        phi <- sqrt(1/m) * colSums(t(w*h) %*% cbind(cos(proj), sin(proj)))
+        # phi <- sqrt(1/m) * cbind(cos(proj/alpha), sin(proj/alpha))
+
         return(phi)
 }
 
-Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
-Kernel <- Phi %*% t(Phi) # approximation of Kernel matrix (regional level)
+# using the inversion -- quasi monte carlo integration;
+# Matern 5-2 kernel -- student 5-2 sdf
+alpha <- 0.25   # lengthscale
+m <- 1000
+Omega <- qt(halton(m,2), 5)/alpha
 
+Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
+hist(Phi)
+corr <- cor(Phi)
+dev.new(width = 1000, height = 700, unit = "px")
+iplotCorr(corr)
+lattice::levelplot(corr)
+
+Kernel <- Phi %*% t(Phi) # approximation of Kernel matrix (regional level)
+Kernel[1:5, 1:5]
+lattice::levelplot(Kernel)
         # ====================================================================== #
-        #                   inference with RFF (regularised)
+        #                   inference with RFF: Ridge Regression
         # ====================================================================== #
 
 Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment)
@@ -80,6 +89,17 @@ library(glmnet)
 lambdas <- 10^seq(5, -5, length.out=100)
 cv_fit <- cv.glmnet(Phi, count, family="poisson", alpha = 0, lambda = lambdas)
 opt_lambda <- cv_fit$lambda.min
+opt_lambda
 
-fit <- glmnet(Phi, count, family="poisson", alpha = 0, lambda = opt_lambda)
-f <- predict(fit, s = opt_lambda, newx = Phi)
+fit <- glmnet(Phi_, count, family="poisson", alpha = 0, lambda = opt_lambda)
+f <- predict(fit, s = opt_lambda, newx = Phi_, type="response")
+
+# clarely there's overdispersion; 
+# should account for this using Negative Binomial with log link
+
+        # ====================================================================== #
+        #                   inference with RFF: Bayesian
+        # ====================================================================== #
+
+
+

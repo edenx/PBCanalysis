@@ -20,22 +20,24 @@ source("polyOpt.R")
 # find polygon and pixel level population density statistics
 pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
-sf_pop_den_ <- pop_den_
 
-sf_out <- sptpolyOpt(sf_pop_den_, PBC, plot=FALSE)
-sf_pixel <- sf_out[[1]]
-sf_pop_den_ <- as(as(sf_pop_den_, "SpatialGridDataFrame"), "sf")
+# sf_out <- sptpolyOpt(sf_pop_den_, PBC, plot=FALSE)
+# sf_pixel <- sf_out[[1]]
+sf_pop_den_ <- as(pop_den_, "SpatialGridDataFrame")
+# sf_pop_den_$nNZ <- sf_pop_den_$NZ/sum(sf_pop_den_$NZ)
+sf_pop_den_$wNZ <- as.vector(scale(sf_pop_den_$NZ, center=FALSE))
 
-index <- as.integer(rownames(sf_pop_den_[sf_pixel$geometry,"NZ"]))
-popwNZ <- rep(0, nrow(sf_pop_den_))
-popwNZ[index] <- sf_pixel$normNZ
-        
-sf_pop_den_ <- sf_pop_den_ %>% mutate(popwNZ=popwNZ)
+# index <- as.integer(rownames(sf_pop_den_[sf_pixel$geometry,"NZ"]))
+# popwNZ <- rep(0, nrow(sf_pop_den_))
+# popwNZ[index] <- sf_pixel$normNZ
+#          
+# sf_pop_den_ <- sf_pop_den_ %>% mutate(popwNZ=popwNZ)
 
-win <- as.owin(as(pop_den_, "SpatialGridDataFrame"))
+win <- as.owin(sf_pop_den_)
 
 # Data Simulation on the computational grid
-model <- RMexp(var=1, scale=0.2)
+# model <- RMexp(var=1, scale=0.2)
+model <- RMmatern(nu=5, scale=0.2)
 
 w <- as.mask(w=win)
 xcol <- w$xcol
@@ -43,13 +45,13 @@ yrow <- w$yrow
 dimw <- w$dim
 Lambda <- as.im(w)
 
-set.seed(241)
+RFoptions(seed=NA)
 spc <- RandomFields::RFoptions()$general$spConform
 if(spc) RandomFields::RFoptions(spConform=FALSE)
 sim <- RandomFields::RFsimulate(model, xcol, yrow, grid=TRUE, n=1)
 if(spc) RandomFields::RFoptions(spConform=TRUE)
 
-Lambda[] <- exp(0.1*rnorm(nrow(sf_pop_den_)) + sim[,]) * as.vector(sf_pop_den_$popwNZ)
+Lambda[] <- exp(0.01*rnorm(nrow(sf_pop_den_)) + sim[,]) * sf_pop_den_$wNZ
 
 # Given intensity, sample from homogenous Poisson for each cell
 X <- sapply(Lambda$v, function(x) rpois(1, x))
