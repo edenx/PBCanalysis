@@ -57,49 +57,94 @@ rff.region <- function(wcentr, Omega, m, alpha){
         
         # Fourier feature for a given area
         # print(w*h)
-        phi <- sqrt(1/m) * colSums(t(w*h) %*% cbind(cos(proj), sin(proj)))
-        # phi <- sqrt(1/m) * cbind(cos(proj/alpha), sin(proj/alpha))
+        phi <- sqrt(1/m) * colSums(t(w*h) %*% cbind(cos(proj/alpha), sin(proj/alpha)))
 
         return(phi)
 }
 
 # using the inversion -- quasi monte carlo integration;
 # Matern 5-2 kernel -- student 5-2 sdf
-alpha <- 0.25   # lengthscale
-m <- 1000
-Omega <- qt(halton(m,2), 5)/alpha
+m <- 100
+Omega <- qt(halton(m,2), 5)
 
+alpha <- 0.25   # lengthscale
 Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
 hist(Phi)
-corr <- cor(Phi)
-dev.new(width = 1000, height = 700, unit = "px")
-iplotCorr(corr)
-lattice::levelplot(corr)
 
 Kernel <- Phi %*% t(Phi) # approximation of Kernel matrix (regional level)
-Kernel[1:5, 1:5]
+Kernel[1:10, 1:10]
 lattice::levelplot(Kernel)
+
+#       ============================================================
+library(lattice)
+for(alpha in seq(0.1,1,length.out=9)){
+        print(alpha)
+        Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
+        
+        Kernel <- Phi %*% t(Phi)
+        png(paste0("LengthScale", alpha, ".png"), 500, 500)
+        print(levelplot(Kernel, xlab=paste0("ls=", alpha)))
+        dev.off()
+}
+#       ============================================================
+
         # ====================================================================== #
         #                   inference with RFF: Ridge Regression
         # ====================================================================== #
 
-Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment)
+# Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, PBC$Barriers, 
+#               PBC$propmale)
+
 # fit a regularised glm with log link
 library(glmnet)
 lambdas <- 10^seq(5, -5, length.out=100)
-cv_fit <- cv.glmnet(Phi, count, family="poisson", alpha = 0, lambda = lambdas)
+cv_fit <- cv.glmnet(Phi, count, family="poisson", 
+                    alpha = 0, lambda = lambdas)
 opt_lambda <- cv_fit$lambda.min
 opt_lambda
 
-fit <- glmnet(Phi_, count, family="poisson", alpha = 0, lambda = opt_lambda)
-f <- predict(fit, s = opt_lambda, newx = Phi_, type="response")
+fit <- glmnet(Phi, count, family="poisson", 
+              alpha = 0, lambda = opt_lambda)
+f <- predict(fit, s = opt_lambda, newx = Phi, 
+             type="response")
 
+plot(f)
+hist(f)
 # clarely there's overdispersion; 
 # should account for this using Negative Binomial with log link
 
         # ====================================================================== #
         #                   inference with RFF: Bayesian
         # ====================================================================== #
+
+library(rstanarm)
+options(mc.cores = parallel::detectCores())
+
+# combine the data set
+dat <- as.data.frame(Phi) %>%
+        mutate(count=count
+               # , pop=PBC$pop
+        )
+
+SEED <- 727282
+
+stan_glm1 <- stan_glm(count ~ ., 
+                      # offset=log(pop),
+                      data=dat, family=poisson, 
+                      prior=normal(0, 2.5), prior_intercept=normal(0,5),
+                      # chains=5, 
+                      # thin=5,
+                      seed=SEED, verbose=TRUE)
+
+hist(as.vector(coef(stan_glm1)))
+quantile(as.vector(coef(stan_glm1)))
+hist(as.vector(se(stan_glm1)))
+quantile(as.vector(se(stan_glm1)))
+# predict
+yrep <- posterior_predict(stan_glm1)
+
+prop_zero <- function(y) mean(y == 0)
+(prop_zero_test1 <- pp_check(stan_glm1, plotfun = "stat", stat = "prop_zero", binwidth=0.5))
 
 
 

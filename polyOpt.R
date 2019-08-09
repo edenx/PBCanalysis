@@ -21,14 +21,12 @@ sptpolyOpt <- function(rast, sf_poly, plot=TRUE){
         # calculate weighted polulation of each spatial polygon by area
         #       i.e. reweighted population density for each polygon instead of cells
         sf_poly_ <- raster::extract(rast, sf_poly, cellnumbers=TRUE, 
-                                fun=mean, sp=TRUE,
-                                weights=TRUE, normalizeWeights=TRUE)
-        sf_poly_ <- st_as_sf(sf_poly_) %>% rename(ArwNZ=NZ) 
+                                fun=sum, sp=TRUE)
+        sf_poly_ <- st_as_sf(sf_poly_) %>% rename(ArSum=NZ) 
         
         # find the overlaps of polygons and points (sf objects)
         sf_pixel <- as(as(rast, "SpatialGridDataFrame"), "sf")
-        ints_polypnt <- st_intersection(sf_pixel, sf_poly_) %>%
-                mutate(logArwNZ=log(ArwNZ))
+        ints_polypnt <- st_intersection(sf_pixel, sf_poly_)
         
         # get (log) normalised (per polygon) population density 
         norm_pop_den <- aggregate(ints_polypnt$NZ, by=list(ints_polypnt$LSOA04CD), FUN=mean) %>%
