@@ -4,6 +4,7 @@ library(sf)
 library(raster)
 library(tidyverse)
 library(tictoc)
+library(glmnet)
 
         # ====================================================================== #
         #       find empirical population density distribution per polygon
@@ -65,60 +66,71 @@ rff.region <- function(wcentr, Omega, m, alpha){
 
 # using the inversion -- quasi monte carlo integration;
 # Matern 5-2 kernel -- student 5-2 sdf
-m <- 100
-Omega <- qt(halton(m,2), 5)
-
-alpha <- 0.01   # lengthscale
-Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
-hist(Phi)
-
-Kernel <- Phi %*% t(Phi) # approximation of Kernel matrix (regional level)
-Kernel[1:10, 1:10]
-lattice::levelplot(Kernel)
-
-#       ============================================================
-library(lattice)
-for(alpha in seq(0.1,1,length.out=9)){
-        print(alpha)
+sim_rff <- function(m=100, nu=5, alpha, plot=FALSE){
+        Omega <- qt(halton(m,2), nu)
         Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
         
         Kernel <- Phi %*% t(Phi)
-        png(paste0("LengthScale", alpha, ".png"), 500, 500)
-        print(levelplot(Kernel, xlab=paste0("ls=", alpha)))
-        dev.off()
+        if(plot){
+                print(lattice::levelplot(Kernel))
+        }
+        
+        return(Phi)
 }
-#       ============================================================
 
         # ====================================================================== #
         #                   inference with RFF: Ridge Regression
         # ====================================================================== #
+# precompute the RFF for each lengthscale
+alphas <- seq(0.01, 1, length.out=10)
+lis_Phi <- list()
+lis_Phi_ <- list()
+for(i in 1:length(alphas)){
+        alpha <- alphas[i]
+        lis_Phi[[i]] <- sim_rff(alpha=alpha)
+        lis_Phi_[[i]] <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, 
+                      PBC$Barriers, PBC$propmale, PBC$Education)
+}
 
-Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, PBC$Barriers,
-              PBC$propmale, PBC$Education)
-log_pop=log(PBC$pop)
+# find the best lengthscale
+lis_cvfit <- c()
+lis_f <- list()
+lis_fit <- list()
 
-# fit a regularised glm with log link
-library(glmnet)
-lambdas <- 10^seq(5, -5, length.out=100)
-cv_fit <- cv.glmnet(Phi_, count, family="poisson", 
-                    # offset=log_pop,
-                    alpha = 0, lambda = lambdas)
-opt_lambda <- cv_fit$lambda.min
-opt_lambda
+for(i in 1:length(lis_Phi)){
+        Phi_ <- lis_Phi_[[i]]
+        print(i)
+        
+        # fit a regularised glm with log link
+        lambdas <- 10^seq(5, -5, length.out=100)
+        cv_fit <- cv.glmnet(Phi_, count, family="poisson", 
+                            # offset=log_pop,
+                            alpha = 0, lambda = lambdas)
+        opt_lambda <- cv_fit$lambda.min
+        lis_cvfit <- c(lis_cvfit, cv_fit$cvm[which(cv_fit$lambda == opt_lambda)])
+        
+        cat("The optimal lambda is ", opt_lambda)
+        cat("\n")
+        
+        fit <- glmnet(Phi_, count, family="poisson", 
+                      # offset=log_pop,
+                      alpha = 0, lambda = opt_lambda)
+        lis_fit[[i]] <- fit
+        
+        lis_f[[i]] <- predict(fit, s = opt_lambda, newx = Phi_, 
+                     # offset=rep(1, nrow(Phi_)),
+                     type="response"
+                     )
+        
+        hist(lis_f[[i]])
+}
 
-fit <- glmnet(Phi_, count, family="poisson", 
-              # offset=log_pop,
-              alpha = 0, lambda = opt_lambda)
+plot(alphas, lis_cvfit, type="line")
 
-hist(exp(fit$a0 + as.vector(Phi_ %*% fit$beta)))
-f <- predict(fit, s = opt_lambda, newx = Phi_, 
-             # offset=rep(1, nrow(Phi_)),
-             type="response")
-
-plot(f)
-hist(f)
-# clarely there's overdispersion; 
-# should account for this using Negative Binomial with log link
+min_error <- which.min(lis_cvfit)
+best_alpha <- alphas[min_error]
+best_pred <- lis_f[[min_error]]
+hist(best_pred, main=paste0("Best Lengthscale is ", best_alpha))
 
         # ====================================================================== #
         #                   inference with RFF: Bayesian
@@ -127,12 +139,8 @@ hist(f)
 library(rstanarm)
 options(mc.cores = parallel::detectCores())
 
-
-# X ~ propmale + Income + Employment + Education + Barriers + Crime +
-#         Environment +  offset(log(pop))
-
-# combine the data set
-dat <- as.data.frame(Phi_) %>%
+# for some length scale combine the data set
+dat <- as.data.frame(lis_Phi_[8]) %>%
         mutate(count=count
                # , pop=PBC$pop
         )
@@ -144,12 +152,11 @@ stan_glm1 <- stan_glm(count ~ .,
                       # offset=log(pop),
                       data=dat, family=poisson, 
                       prior=normal(0, 2.5), prior_intercept=normal(0,5),
+                      control = list(max_treedepth = 20),
                       # chains=5, 
                       # thin=5,
                       seed=SEED, verbose=TRUE)
 toc(log=TRUE)
-
-tic.log(format = TRUE)
 
 hist(as.vector(coef(stan_glm1)))
 quantile(as.vector(coef(stan_glm1)))
