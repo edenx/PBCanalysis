@@ -3,6 +3,7 @@ library(SDALGCP)
 library(sf)
 library(raster)
 library(tidyverse)
+library(tictoc)
 
         # ====================================================================== #
         #       find empirical population density distribution per polygon
@@ -67,7 +68,7 @@ rff.region <- function(wcentr, Omega, m, alpha){
 m <- 100
 Omega <- qt(halton(m,2), 5)
 
-alpha <- 0.25   # lengthscale
+alpha <- 0.01   # lengthscale
 Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
 hist(Phi)
 
@@ -92,20 +93,26 @@ for(alpha in seq(0.1,1,length.out=9)){
         #                   inference with RFF: Ridge Regression
         # ====================================================================== #
 
-# Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, PBC$Barriers, 
-#               PBC$propmale)
+Phi_ <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, PBC$Barriers,
+              PBC$propmale, PBC$Education)
+log_pop=log(PBC$pop)
 
 # fit a regularised glm with log link
 library(glmnet)
 lambdas <- 10^seq(5, -5, length.out=100)
-cv_fit <- cv.glmnet(Phi, count, family="poisson", 
+cv_fit <- cv.glmnet(Phi_, count, family="poisson", 
+                    # offset=log_pop,
                     alpha = 0, lambda = lambdas)
 opt_lambda <- cv_fit$lambda.min
 opt_lambda
 
-fit <- glmnet(Phi, count, family="poisson", 
+fit <- glmnet(Phi_, count, family="poisson", 
+              # offset=log_pop,
               alpha = 0, lambda = opt_lambda)
-f <- predict(fit, s = opt_lambda, newx = Phi, 
+
+hist(exp(fit$a0 + as.vector(Phi_ %*% fit$beta)))
+f <- predict(fit, s = opt_lambda, newx = Phi_, 
+             # offset=rep(1, nrow(Phi_)),
              type="response")
 
 plot(f)
@@ -120,14 +127,19 @@ hist(f)
 library(rstanarm)
 options(mc.cores = parallel::detectCores())
 
+
+# X ~ propmale + Income + Employment + Education + Barriers + Crime +
+#         Environment +  offset(log(pop))
+
 # combine the data set
-dat <- as.data.frame(Phi) %>%
+dat <- as.data.frame(Phi_) %>%
         mutate(count=count
                # , pop=PBC$pop
         )
 
 SEED <- 727282
 
+tic("Stan")
 stan_glm1 <- stan_glm(count ~ ., 
                       # offset=log(pop),
                       data=dat, family=poisson, 
@@ -135,6 +147,9 @@ stan_glm1 <- stan_glm(count ~ .,
                       # chains=5, 
                       # thin=5,
                       seed=SEED, verbose=TRUE)
+toc(log=TRUE)
+
+tic.log(format = TRUE)
 
 hist(as.vector(coef(stan_glm1)))
 quantile(as.vector(coef(stan_glm1)))
