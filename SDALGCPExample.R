@@ -10,6 +10,9 @@ data <- as.data.frame(PBCshp@data)  #get the data
 ### Write the formula of the model
 FORM <- X ~ propmale + Income + Employment + Education + Barriers + Crime +
         Environment +  offset(log(pop))
+
+# FORM <- X ~ 1
+
 ### set the discretised phi
 phi <- seq(500, 1700, length.out = 20)
 
@@ -28,19 +31,19 @@ control.mcmc <- controlmcmcSDA(n.sim = 10000, burnin = 2000,
 ###Run the model
 # pop_den <- values(SDALGCP::pop_den)
 data(pop_den)
-pop_den[is.na(SDALGCP::pop_den[])] <- 0
+pop_den[is.na(pop_den[])] <- 0
 my_est <- SDALGCPMCML(formula=FORM, data=data, my_shp=PBCshp, delta=100, 
                       phi=phi, method=1, 
-                      # pop_shp=pop_den,
-                      weighted=FALSE, 
+                      pop_shp=pop_den,
+                      weighted=TRUE, 
                       plot=TRUE, par0=NULL, control.mcmc=control.mcmc)
 summary(my_est)
-Con_pred <- SDALGCPPred(para_est=my_est,  cellsize=300, continuous=TRUE)
+Con_pred_2 <- SDALGCPPred(para_est=my_est,  cellsize=300, continuous=TRUE)
 
 #to plot the spatially continuous relative risk
-plot(Con_pred, type="relrisk")
+plot(Con_pred_2, type="relrisk")
 #to plot the incidence
-plot(Con_pred, type="incidence", continuous=FALSE)
+plot(Con_pred_2, type="incidence", continuous=FALSE)
 #to plot the exceedance probability of the relative risk
 plot(Con_pred, type="relrisk", thresholds= 2)
 #to plot the exceedance probability of the incidence

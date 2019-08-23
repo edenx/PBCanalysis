@@ -3,8 +3,6 @@ library(SDALGCP)
 library(sf)
 library(raster)
 library(tidyverse)
-library(tictoc)
-library(glmnet)
 
         # ====================================================================== #
         #       find empirical population density distribution per polygon
@@ -78,95 +76,13 @@ sim_rff <- function(m=100, nu=5, alpha, plot=FALSE){
         return(Phi)
 }
 
-        # ====================================================================== #
-        #                   inference with RFF: Ridge Regression
-        # ====================================================================== #
 # precompute the RFF for each lengthscale
-alphas <- seq(0.01, 1, length.out=10)
+alphas <- seq(500, 1700, length.out = 20)
 lis_Phi <- list()
 lis_Phi_ <- list()
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
         lis_Phi[[i]] <- sim_rff(alpha=alpha)
         lis_Phi_[[i]] <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, 
-                      PBC$Barriers, PBC$propmale, PBC$Education)
+                               PBC$Barriers, PBC$propmale, PBC$Education)
 }
-
-# find the best lengthscale
-lis_cvfit <- c()
-lis_f <- list()
-lis_fit <- list()
-
-for(i in 1:length(lis_Phi)){
-        Phi_ <- lis_Phi_[[i]]
-        print(i)
-        
-        # fit a regularised glm with log link
-        lambdas <- 10^seq(5, -5, length.out=100)
-        cv_fit <- cv.glmnet(Phi_, count, family="poisson", 
-                            # offset=log_pop,
-                            alpha = 0, lambda = lambdas)
-        opt_lambda <- cv_fit$lambda.min
-        lis_cvfit <- c(lis_cvfit, cv_fit$cvm[which(cv_fit$lambda == opt_lambda)])
-        
-        cat("The optimal lambda is ", opt_lambda)
-        cat("\n")
-        
-        fit <- glmnet(Phi_, count, family="poisson", 
-                      # offset=log_pop,
-                      alpha = 0, lambda = opt_lambda)
-        lis_fit[[i]] <- fit
-        
-        lis_f[[i]] <- predict(fit, s = opt_lambda, newx = Phi_, 
-                     # offset=rep(1, nrow(Phi_)),
-                     type="response"
-                     )
-        
-        hist(lis_f[[i]])
-}
-
-plot(alphas, lis_cvfit, type="line")
-
-min_error <- which.min(lis_cvfit)
-best_alpha <- alphas[min_error]
-best_pred <- lis_f[[min_error]]
-hist(best_pred, main=paste0("Best Lengthscale is ", best_alpha))
-
-        # ====================================================================== #
-        #                   inference with RFF: Bayesian
-        # ====================================================================== #
-
-library(rstanarm)
-options(mc.cores = parallel::detectCores())
-
-# for some length scale combine the data set
-dat <- as.data.frame(lis_Phi_[8]) %>%
-        mutate(count=count
-               # , pop=PBC$pop
-        )
-
-SEED <- 727282
-
-tic("Stan")
-stan_glm1 <- stan_glm(count ~ ., 
-                      # offset=log(pop),
-                      data=dat, family=poisson, 
-                      prior=normal(0, 2.5), prior_intercept=normal(0,5),
-                      control = list(max_treedepth = 20),
-                      # chains=5, 
-                      # thin=5,
-                      seed=SEED, verbose=TRUE)
-toc(log=TRUE)
-
-hist(as.vector(coef(stan_glm1)))
-quantile(as.vector(coef(stan_glm1)))
-hist(as.vector(se(stan_glm1)))
-quantile(as.vector(se(stan_glm1)))
-# predict
-yrep <- posterior_predict(stan_glm1)
-
-prop_zero <- function(y) mean(y == 0)
-(prop_zero_test1 <- pp_check(stan_glm1, plotfun = "stat", stat = "prop_zero", binwidth=0.5))
-
-
-
