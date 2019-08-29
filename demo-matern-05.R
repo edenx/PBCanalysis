@@ -36,7 +36,8 @@ k12 = function(d,lengthscale) {
 
 u1 <- as.matrix(dist(xy[,1])) # create the distance matrix
 u2 <- as.matrix(dist(xy[,2])) # create the distance matrix
-exact.cov = k52(u,1)
+exact.cov = k52(u,1/600)
+lattice::levelplot(exact.cov)
 
 #exact.cov = k12(u1,1)*k12(u2,1)
 #exact.cov = k52(u,1)
