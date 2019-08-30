@@ -64,9 +64,9 @@ rff.region <- function(wcentr, Omega, m, alpha){
 
 # using the inversion -- quasi monte carlo integration;
 # Matern 5-2 kernel -- student 5-2 sdf
-sim_rff <- function(m=100, nu=5, alpha, plot=FALSE){
+sim_rff <- function(lis_region, m=100, nu=5, alpha, plot=FALSE){
         Omega <- qt(halton(m,2), nu)
-        Phi <- t(sapply(lis_wcentr, rff.region, Omega, m, alpha))
+        Phi <- t(sapply(lis_region, rff.region, Omega, m, alpha))
         
         Kernel <- Phi %*% t(Phi)
         if(plot){
@@ -77,12 +77,12 @@ sim_rff <- function(m=100, nu=5, alpha, plot=FALSE){
 }
 
 # precompute the RFF for each lengthscale
-alphas <- seq(500, 1700, length.out = 20)
+alphas <- seq(0.01, 0.3, length.out = 15)
 lis_Phi <- list()
 lis_Phi_ <- list()
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
-        lis_Phi[[i]] <- sim_rff(alpha=alpha)
-        lis_Phi_[[i]] <- cbind(Phi, PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, 
+        lis_Phi[[i]] <- sim_rff(lis_wcentr, alpha=alpha)
+        lis_Phi_[[i]] <- cbind(lis_Phi[[i]], PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, 
                                PBC$Barriers, PBC$propmale, PBC$Education)
 }
