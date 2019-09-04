@@ -1,18 +1,29 @@
+## Not working!!!! WHY!!!
 library(parallel)
 
 # Calculate the number of cores
-no_cores <- detectCores() - 2
+no_cores <- detectCores()
 
 # Initiate cluster
-cl <- makeCluster(no_cores, type="FORK")
+# cl <- makeCluster(no_cores, type="FORK")
 
+# lis_cv <- list()
 # 5-fold cross validation
+options(mc.cores=no_cores)
 tic("5fold cv")
-lis_cv <- parLapply(cl, stan_mod_3, rstanarm::kfold, K=5)
-stopCluster(cl)
+lis_cv <- lapply(stan_mod, rstanarm::kfold, K=5)
+
+# for(i in 1:length(stan_mod_3)){
+#         lis_cv[[i]] <- kfold(stan_mod_3[[i]], K=10, cores=8)
+#         # lis_cv[[i]] <- rstanarm::loo(stan_mod_3[[i]], cores=no_cores)
+#         paste0("current progress at", i)
+# }
+
+# stopCluster(cl)
 lis_elpd_kfold <- sapply(lis_cv, function(x) x$elpd_kfold)
 toc()
 
+saveRDS(lis_cv, "stan_cv5.RData")
 
 # the smallest positive elpd_kfold gives the smallest error
 plot(alphas, abs(lis_elpd_kfold), type="l")

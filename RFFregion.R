@@ -34,7 +34,7 @@ table(unlist(sapply(lis_wcentr, function(x) sum(x[, "W"]))))
 table(unlist(sapply(lis_wcentr, function(x) sum(x[, "W"]*x[,"weight"]))))
 
 
-names(lis_wcentr) <- seq(1,length(lis_wcentr))
+# names(lis_wcentr) <- seq(1,length(lis_wcentr))
 
 # sp_count <- raster::extract(sim_lgcp, PBC, small=TRUE, sp=TRUE, fun=sum)
 # count <- sp_count[]$NZ
