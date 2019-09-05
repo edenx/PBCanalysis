@@ -8,17 +8,16 @@ library(glmnet)
 lis_cvfit <- c()
 lis_f <- list()
 lis_fit <- list()
-log_pop <- log(PBC$pop)
 
 for(i in 1:length(lis_Phi)){
-        Phi <- lis_Phi[[i]]
+        Phi_ <- lis_Phi_[[i]]
         print(i)
         
         # fit a regularised glm with log link
         lambdas <- 10^seq(5, -5, length.out=100)
-        cv_fit <- cv.glmnet(Phi, count, family="poisson", 
+        cv_fit <- cv.glmnet(Phi_, count, family="poisson", 
                             # offset=log_pop,
-                            alpha=1, lambda=lambdas)
+                            alpha=0.6, lambda=lambdas)
         
         opt_lambda <- cv_fit$lambda.min
         lis_cvfit <- c(lis_cvfit, cv_fit$cvm[which(cv_fit$lambda == opt_lambda)])
@@ -26,12 +25,12 @@ for(i in 1:length(lis_Phi)){
         cat("The optimal lambda is ", opt_lambda)
         cat("\n")
         
-        fit <- glmnet(Phi, count, family="poisson", 
+        fit <- glmnet(Phi_, count, family="poisson", 
                       # offset=log_pop,
                       alpha = 0.6, lambda=opt_lambda)
         lis_fit[[i]] <- fit
         
-        lis_f[[i]] <- predict(fit, s=opt_lambda, newx=Phi, 
+        lis_f[[i]] <- predict(fit, s=opt_lambda, newx=Phi_, 
                               # offset=log_pop,
                               type="response"
         )
