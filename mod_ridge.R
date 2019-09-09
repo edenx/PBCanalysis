@@ -1,47 +1,15 @@
 #### Run 'RFFregion.R' first to get Fourier Features
-
 library(tidyverse)
 library(tictoc)
 library(glmnet)
 
-# find the best lengthscale
-lis_cvfit <- c()
-lis_f <- list()
-lis_fit <- list()
+source("RFFfunc.R")
+
 log_pop <- log(PBC$pop)
+# the best lengthscale with ridge glm
+cv_output <- alpha_cv(lis_Phi_, tune_param=0.5, offset=log_pop)
+min_index <- cv_output$min_index
+best_alpha <- cv_output$best_ls
+best_pred <- cv_output$best_pred
 
-for(i in 1:length(lis_Phi)){
-        Phi <- lis_Phi[[i]]
-        print(i)
-        
-        # fit a regularised glm with log link
-        lambdas <- 10^seq(5, -5, length.out=100)
-        cv_fit <- cv.glmnet(Phi, count, family="poisson", 
-                            # offset=log_pop,
-                            alpha=1, lambda=lambdas)
-        
-        opt_lambda <- cv_fit$lambda.min
-        lis_cvfit <- c(lis_cvfit, cv_fit$cvm[which(cv_fit$lambda == opt_lambda)])
-        
-        cat("The optimal lambda is ", opt_lambda)
-        cat("\n")
-        
-        fit <- glmnet(Phi, count, family="poisson", 
-                      # offset=log_pop,
-                      alpha = 0.6, lambda=opt_lambda)
-        lis_fit[[i]] <- fit
-        
-        lis_f[[i]] <- predict(fit, s=opt_lambda, newx=Phi, 
-                              # offset=log_pop,
-                              type="response"
-        )
-        
-        hist(lis_f[[i]])
-}
-
-plot(alphas, lis_cvfit, type="line")
-
-min_error <- which.min(lis_cvfit)
-best_alpha <- alphas[min_error]
-best_pred <- lis_f[[min_error]]
 hist(best_pred, main=paste0("Best Lengthscale is ", best_alpha))
