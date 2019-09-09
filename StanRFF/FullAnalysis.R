@@ -53,7 +53,7 @@ for(i in 1:length(alphas)){
 
 log_pop <- log(PBC$pop)
 # the best lengthscale with regularised glm
-cv_output <- alpha_cv(lis_Phi_, tune_param=0.3, offset=log_pop)
+cv_output <- alpha_cv(lis_Phi_, tune_param=0, offset=log_pop)
 min_index <- cv_output$min_index
 best_alpha <- cv_output$best_ls
 best_pred <- cv_output$best_pred
