@@ -53,9 +53,9 @@ for(i in 1:length(alphas)){
 
 log_pop <- log(PBC$pop)
 # the best lengthscale with regularised glm
-cv_output <- alpha_cv(lis_Phi_, tune_param=0, offset=log_pop)
+cv_output <- alpha_cv(lis_Phi_, tune_param=0.2, offset=log_pop)
 min_index <- cv_output$min_index
-best_alpha <- cv_output$best_ls
+best_alpha <- cv_output$best_ls  # 0.83 or 0.3??? Depends on the number of steps?
 best_pred <- cv_output$best_pred
 
 hist(best_pred, main=paste0("Best Lengthscale is ", best_alpha))
@@ -95,3 +95,5 @@ plot_pred(colMeans(yrep_), round(best_alpha, 2))
 bias(yrep_)
 rmse(yrep_)
 cp95(yrep_)
+
+
