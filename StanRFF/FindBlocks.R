@@ -49,6 +49,8 @@ fin_index <- 545-c(1,temp_round[c(4,5,6,7,9,10,11,12,14,15)])
 fin_index <- sort(fin_index[-c(11,8)])
 fin_index <- c(1, fin_index)
 
+fin_index <- c(1,117,130,283,296,397,408,499,524,536,544)
+
 mat_00 <- mat_09
 for(i in fin_index){
         mat_00[0:i,i] <- 0.5

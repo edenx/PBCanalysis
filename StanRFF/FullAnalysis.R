@@ -40,22 +40,27 @@ count <- PBC$X
 alphas <- seq(0.2, 1, length.out = 30)
 lis_Phi <- list()
 lis_Phi_ <- list()
+PBC_df <- PBC %>% st_set_geometry(NULL)
+
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
-        lis_Phi[[i]] <- sim_rff(lis_wcentr, alpha=alpha)
-        lis_Phi_[[i]] <- cbind(lis_Phi[[i]], PBC$Income, PBC$Crime, PBC$Environment, PBC$Employment, 
-                               PBC$Barriers, PBC$propmale, PBC$Education)
+        
+        lis_Phi[[i]] <- sim_rff(lis_wcentr, alpha=alpha) %>% 
+                dplyr::mutate(pop=scale(PBC_df$pop, center=FALSE), count=PBC_df$X)
+        
+        lis_Phi_[[i]] <- lis_Phi[[i]] %>% 
+                cbind(dplyr::select(PBC_df, Income, Crime, Environment, Employment, 
+                                    Barriers, propmale, Education))
 }
 
         # ====================================================================== #
         #                   find lengthscle with regularised GLM                 #
         # ====================================================================== #
 
-log_pop <- log(PBC$pop)
 # the best lengthscale with regularised glm
-cv_output <- alpha_cv(lis_Phi_, tune_param=0.2, offset=log_pop)
+cv_output <- alpha_ridge(lis_Phi_)
 min_index <- cv_output$min_index
-best_alpha <- cv_output$best_ls  # 0.83 or 0.3??? Depends on the number of steps?
+best_alpha <- cv_output$best_ls
 best_pred <- cv_output$best_pred
 
 hist(best_pred, main=paste0("Best Lengthscale is ", best_alpha))
@@ -68,13 +73,14 @@ SEED <- 727282
 
 dat_ <- as.data.frame(lis_Phi_[[min_index]]) %>%
         mutate(count=count
-               , log_pop=scale(log(PBC$pop), center=FALSE)
+               , pop=scale(PBC$pop, center=FALSE)
         )
 
 tic(paste0("Model fitting with lengthscale=", alphas[min_index]))
 
-stan_mod_ <- stan_glm(count ~ . -log_pop,
-                      offset=log_pop,
+
+stan_mod_ <- stan_glm(count ~ . -pop,
+                      offset=pop,
                       data=dat_, family=poisson,
                       prior=normal(0, sqrt(2)), prior_intercept=normal(0,5),
                       control = list(max_treedepth = 20),
@@ -84,6 +90,20 @@ stan_mod_ <- stan_glm(count ~ . -log_pop,
 toc()
 
 yrep_ <- posterior_predict(stan_mod_)
+
+
+        # ====================================================================== #
+        #             fit INLA for the list of lengthscales (default prior)      #
+        # ====================================================================== #
+
+
+# Set differnt prior on the Coefficient!! (may be more restricted s.d)
+lmod <- lm(count ~ . + offset(pop)-pop, lis_Phi_[[1]])
+form<- formula(lmod)
+## Perhaps prior with smaller variance 
+## (so that extrme values in the posterior more unlikely fir smaller alphas?)
+post_output <- alpha_inla(lis_Phi_, form, alphas, hist_plot=FALSE)
+
 
         # ====================================================================== #
         #                   Evaluate the result with some metrics                #
@@ -96,4 +116,8 @@ bias(yrep_)
 rmse(yrep_)
 cp95(yrep_)
 
-
+for(i in 1:length(alphas)){
+        plot(plot_pred(post_output$summary.fitted.value[[i]][,1], alphas[i]
+                       # , compare=FALSE
+                       ))
+}

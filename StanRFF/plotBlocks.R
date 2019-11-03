@@ -2,11 +2,11 @@
 lis_blocks <- list()
 sf_geom <- PBC[, c("geometry", "X")] %>% 
         rename(count=X)
-filt_index <- c(1,0,1,1,0,1,1,1,1)==1
+filt_index <- c(1,0,1,0,1,0,1,1,1,1)==1
 
 for(i in seq(length(fin_index)-1)[filt_index]){
         
-        png(paste0("Block", fin_index[i], "_", fin_index[i+1], ".png"), width=500)
+        # png(paste0("Block", fin_index[i], "_", fin_index[i+1], ".png"), width=500)
         
         sf_pred <- PBC[seq(fin_index[i], fin_index[i+1]), c("geometry", "X")] %>% 
                 # mutate(pred=pred, normpop=lis_wcentr) %>% 
@@ -19,8 +19,5 @@ for(i in seq(length(fin_index)-1)[filt_index]){
                 theme_linedraw() +
                 labs(x="Northing", y="Easting")
         print(pop_)
-        dev.off()
+        # dev.off()
 }
-
-# to filter out the blocks, discarding the gaps
-lis_blocks <- lis_blocks[filt_index==1]
