@@ -19,6 +19,9 @@ source("RFFfunc.R")
 pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
 
+# value: population density per cell
+# weight: the proportion of cell intersected with the polygon
+# W: weighted population density per grid intersection with polygon
 sf_poly_ <- raster::extract(pop_den_, PBC, cellnumbers=TRUE, small=TRUE,
                             weights=TRUE, normalizeWeights=FALSE)
 lis_centr <- sapply(sf_poly_, function(x) cbind(x, scale(coordinates(pop_den_))[x[,1],]))
@@ -31,6 +34,19 @@ table(unlist(sapply(lis_wcentr, function(x) sum(x[, "W"]*x[,"weight"]))))
 
 count <- PBC$X
 
+        # ====================================================================== #
+        #               if want to look at the exact KME                         #
+        # ====================================================================== #
+# choose some lengthscale alpha=0.4
+# paralleled but still quite slow to compute (as a double for loop is required)
+# upshot: just use RFF with 100 features
+tic()
+sim.regker(lis_wcentr, alpha=0.4, plot=TRUE)
+toc()
+
+tic()
+sim_rff(lis_wcentr, alpha=0.4, plot=TRUE)
+toc()
 
         # ====================================================================== #
         #                           find Fourier Features                        #
@@ -38,6 +54,7 @@ count <- PBC$X
 
 # precompute the RFF for each lengthscale
 alphas <- seq(0.2, 1, length.out = 30)
+lis_Phi.null <- list()
 lis_Phi <- list()
 lis_Phi_ <- list()
 PBC_df <- PBC %>% st_set_geometry(NULL)
@@ -45,7 +62,9 @@ PBC_df <- PBC %>% st_set_geometry(NULL)
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
         
-        lis_Phi[[i]] <- sim_rff(lis_wcentr, alpha=alpha) %>% 
+        lis_Phi.null[[i]] <- sim_rff(lis_wcentr, alpha=alpha)
+        
+        lis_Phi[[i]] <-  lis_Phi.null[[i]] %>% 
                 dplyr::mutate(pop=scale(PBC_df$pop, center=FALSE), count=PBC_df$X)
         
         lis_Phi_[[i]] <- lis_Phi[[i]] %>% 
