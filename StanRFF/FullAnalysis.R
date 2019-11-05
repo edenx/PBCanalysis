@@ -18,6 +18,7 @@ source("RFFfunc.R")
 
 pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
+PBC_df <- PBC %>% st_set_geometry(NULL)
 
 # value: population density per cell
 # weight: the proportion of cell intersected with the polygon
@@ -26,6 +27,10 @@ sf_poly_ <- raster::extract(pop_den_, PBC, cellnumbers=TRUE, small=TRUE,
                             weights=TRUE, normalizeWeights=FALSE)
 lis_centr <- sapply(sf_poly_, function(x) cbind(x, scale(coordinates(pop_den_))[x[,1],]))
 lis_wcentr <- sapply(lis_centr, check.0)
+
+# find the exposure risk
+pop_den_reg <- sapply(lis_centr, function(x) sum(x[,"value"] * x[,"weight"]))
+exposure <- PBC_df$pop/pop_den_reg
 
 # check the distribution of population density 
 hist(unlist(sapply(lis_wcentr, function(x) x[, "W"])))
@@ -57,15 +62,14 @@ alphas <- seq(0.2, 1, length.out = 30)
 lis_Phi.null <- list()
 lis_Phi <- list()
 lis_Phi_ <- list()
-PBC_df <- PBC %>% st_set_geometry(NULL)
 
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
         
         lis_Phi.null[[i]] <- sim_rff(lis_wcentr, alpha=alpha)
         
-        lis_Phi[[i]] <-  lis_Phi.null[[i]] %>% 
-                dplyr::mutate(pop=scale(PBC_df$pop, center=FALSE), count=PBC_df$X)
+        lis_Phi[[i]] <-  lis_Phi.null[[i]] %>% as.data.frame() %>%
+                dplyr::mutate(count=PBC_df$X)
         
         lis_Phi_[[i]] <- lis_Phi[[i]] %>% 
                 cbind(dplyr::select(PBC_df, Income, Crime, Environment, Employment, 
@@ -77,7 +81,7 @@ for(i in 1:length(alphas)){
         # ====================================================================== #
 
 # the best lengthscale with regularised glm
-cv_output <- alpha_ridge(lis_Phi_)
+cv_output <- alpha_ridge(lis_Phi_, exposure)
 min_index <- cv_output$min_index
 best_alpha <- cv_output$best_ls
 best_pred <- cv_output$best_pred
@@ -91,15 +95,13 @@ options(mc.cores = parallel::detectCores())
 SEED <- 727282
 
 dat_ <- as.data.frame(lis_Phi_[[min_index]]) %>%
-        mutate(count=count
-               , pop=scale(PBC$pop, center=FALSE)
-        )
+        mutate(count=count)
 
 tic(paste0("Model fitting with lengthscale=", alphas[min_index]))
 
 
-stan_mod_ <- stan_glm(count ~ . -pop,
-                      offset=pop,
+stan_mod_ <- stan_glm(count ~ . ,
+                      offset=exposure,
                       data=dat_, family=poisson,
                       prior=normal(0, sqrt(2)), prior_intercept=normal(0,5),
                       control = list(max_treedepth = 20),
@@ -115,14 +117,19 @@ yrep_ <- posterior_predict(stan_mod_)
         #             fit INLA for the list of lengthscales (default prior)      #
         # ====================================================================== #
 
+lmod <- lm(count ~ . , lis_Phi_[[1]])
+form <- formula(lmod)
+## extreme values for small ls 
+## Perhaps prior with smaller variance?
+## (so that extrme values in the posterior more unlikely for smaller alphas?)
+tic()
+post_output <- alpha_inla(lis_Phi_, form, exposure, alphas, hist_plot=TRUE)
+toc()
 
-# Set differnt prior on the Coefficient!! (may be more restricted s.d)
-lmod <- lm(count ~ . + offset(pop)-pop, lis_Phi_[[1]])
-form<- formula(lmod)
-## Perhaps prior with smaller variance 
-## (so that extrme values in the posterior more unlikely fir smaller alphas?)
-post_output <- alpha_inla(lis_Phi_, form, alphas, hist_plot=FALSE)
+# hmmm the loglik looks funny... whyyyyyy
+plot(alphas, unlist(post_output$marloglik), type="l")
 
+sapply(post_output$summary.fitted.value, function(x) plot_pred(x[,1], NULL, compare=TRUE, count))
 
         # ====================================================================== #
         #                   Evaluate the result with some metrics                #

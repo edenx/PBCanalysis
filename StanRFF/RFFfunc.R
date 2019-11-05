@@ -97,25 +97,24 @@ sim_rff <- function(lis_region, m=100, nu=5, alpha, plot=FALSE){
                 print(lattice::levelplot(Kernel))
         }
         
-        return(as.data.frame(Phi))
+        return(as.matrix(Phi))
 }
 
 # find the best lengthscale with cv over ridge glm
-alpha_ridge <- function(lis_rff, tune_param=1, hist_plot=TRUE){
+alpha_ridge <- function(lis_rff, E, tune_param=1, hist_plot=TRUE){
         
         lis_cvfit <- c()
         lis_f <- list()
         lis_fit <- list()
-        offset <- lis_rff[[1]][,"pop"]
-        
+
         for(i in 1:length(lis_rff)){
-                Phi <- lis_rff[[i]] %>% dplyr::mutate(pop=NULL)
+                Phi <- lis_rff[[i]]
                 print(i)
                 
                 # fit a regularised glm with log link
                 lambdas <- 10^seq(5, -5, length.out=100)
                 cv_fit <- cv.glmnet(Phi, count, family="poisson",
-                                    offset=offset,
+                                    offset=E,
                                     alpha=tune_param, lambda=lambdas)
 
                 opt_lambda <- cv_fit$lambda.min
@@ -125,13 +124,13 @@ alpha_ridge <- function(lis_rff, tune_param=1, hist_plot=TRUE){
                 cat("\n")
                 
                 fit <- glmnet(Phi, count, family="poisson", 
-                              offset=log_pop,
-                              alpha = tune_param, lambda=opt_lambda)
+                              offset=E,
+                              alpha=tune_param, lambda=opt_lambda)
                 
                 lis_fit[[i]] <- fit
                 
                 lis_f[[i]] <- predict(fit, s=opt_lambda, newx=Phi, 
-                                      newoffset=offset,
+                                      newoffset=E,
                                       type="response"
                 )
                 
@@ -158,7 +157,7 @@ alpha_ridge <- function(lis_rff, tune_param=1, hist_plot=TRUE){
 # lmod <- lm(count ~ . + I(pop)-pop, dat_)
 # form<- formula(lmod)
 
-alpha_inla <- function(lis_rff, form, alphas, hist_plot=TRUE){
+alpha_inla <- function(lis_rff, form, E, alphas, hist_plot=TRUE){
         lis_f <- list()
         lis_fe <- list()
         lis_fv <- list()
@@ -167,8 +166,10 @@ alpha_inla <- function(lis_rff, form, alphas, hist_plot=TRUE){
         for(i in 1:length(lis_rff)){
                 Phi <- lis_rff[[i]]
                 
+                # prior=normal(0, sqrt(2)), prior_intercept=normal(0,5)
                 fit <- inla(form, family="poisson", data=Phi, 
-                            control.predictor = list(compute=TRUE))
+                            control.fixed(prec.intercept=1/sqrt(2), prec=10),
+                            control.predictor = list(compute=TRUE), E=E)
                 lis_f[[i]] <- fit
                 lis_fe[[i]] <- fit$summary.fixed
                 lis_fv[[i]] <- fit$summary.fitted.values
@@ -178,7 +179,7 @@ alpha_inla <- function(lis_rff, form, alphas, hist_plot=TRUE){
                         # mean of predicted count
                         col1 <- adjustcolor(2, alpha.f = 0.3)
                         col2 <- adjustcolor(4, alpha.f = 0.3)
-                        hist(lis_postm[[i]], col=col1, 
+                        hist(lis_fv[[i]][,1], col=col1, 
                              main=paste0("Data vs. Predicted Mean Count with ls=", alphas[i]))
                         hist(Phi$count, col=col2, add=TRUE)
                         legend("topright", legend=c("Predicted Mean", "Count"),
@@ -190,9 +191,6 @@ alpha_inla <- function(lis_rff, form, alphas, hist_plot=TRUE){
         return(out)
 }
 
-alpha_inla.me <- function(lis_rff, form, alphas, hist_plot=TRUE){
-        
-}
 
 # Bias
 bias <- function(pred) mean(colMeans(pred-count))
@@ -206,13 +204,23 @@ cp95 <- function(pred){
         mean(ci95[1,]>=count & ci95[2, ]<=count)
 }
 
+# prediction: histogram
+plot_hist <- function(pred, alpha){
+        col1 <- adjustcolor(2, alpha.f = 0.3)
+        col2 <- adjustcolor(4, alpha.f = 0.3)
+        hist(pred, col=col1, 
+             main=paste0("Data vs. Predicted Mean Count with ls=", alpha))
+        hist(PBC_df$X, col=col2, add=TRUE)
+        legend("topright", legend=c("Predicted Mean", "Count"),
+               fill=c(col1, col2), cex=0.8)
+}
+
 # prediction: spatial plot
-plot_pred <- function(pred, ls, compare=TRUE, count="X"){
+plot_pred <- function(pred, ls, compare=FALSE, count=NULL){
         
         if(compare){
-                sf_pred <- PBC[, c("geometry", paste0(count))] %>% 
-                        mutate(pred=pred, normpop=lis_wcentr) %>% 
-                        rename(count=paste0(count))
+                sf_pred <- PBC[, "geometry"] %>% 
+                        mutate(pred=pred, count=count)
                 
                 pop_ <- ggplot() + 
                         geom_sf(data=sf_pred["count"], aes(fill=count), lwd=0.05) + 
@@ -229,7 +237,7 @@ plot_pred <- function(pred, ls, compare=TRUE, count="X"){
                 gridExtra::grid.arrange(pop_, pred_, nrow=2)
         }else{
                 sf_pred <- PBC[, c("geometry")] %>% 
-                        mutate(pred=pred, normpop=lis_wcentr)
+                        mutate(pred=pred)
                 
                 pred_ <- ggplot() + 
                         geom_sf(data=sf_pred["pred"], aes(fill=pred), lwd=0.05) + 
