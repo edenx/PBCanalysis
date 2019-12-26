@@ -18,7 +18,7 @@ Further, we consider Continuous-block cross-validation to aid the model selectio
 
 The functions for main construction steps can be found in `/ArealKernel/RFFfunc.R`. The analysis using models with Stan and INLA can be found in `/ArealKernel/FullAnalysis.R`. The exploratory analysis of the block-structure incured from the kernel can be found in `/ArealKernel/FindBlocks.R`. There is also ongoing implementation with spatial random effect model in `/ArealKernel/SpatialRE`, borrwoing the same construction idea for BYM model. Ongoing implementation of Continuous-block CV can be found in `/ArealKernel/CBCV`.
 
-# Task List
+## Task List
 - [ ] CBCV: 
   - [ ] First, extending LOO strategy to include also neighbours;
   - [ ] Try leaving out different percentages of the regions;
@@ -31,6 +31,8 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
   - [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
   - [ ] Model comparison with CBCV and Marginal Loglik.
 
+
+## References
 <a name="fnt1">1</a>: Johnson, O. O., Diggle, P., & Chicas, E. G. (2019). A Spatially Discrete Approximation to Log-Gaussian Cox Processes for Modelling Aggregated Disease Count Data. Retrieved from https://arxiv.org/pdf/1901.09551.pdf
 
 <a name="fnt2">2</a>:: Taylor, B., Davies, T., Rowlingson, B., & Diggle, P. (2015). Bayesian inference and data augmentation schemes for spatial, spatiotemporal and multivariate log-Gaussian Cox processes in R. Journal of Statistical Software, 63, 1-48.
