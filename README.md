@@ -11,8 +11,9 @@ The implementation are done in Bayesian frameworks with Stan and INLA (possibly 
 Other assumptions are made for the practical analysis due to the limitation of the data and storage capacity, 
 * Common assumption of doing spatial modelling;
 * Continuity is assumed despite discrete representation on a grid. e.g. population density with certain granularity (on a grid) are assumed to be aggregated from continuous ground truth; 
+* Things to add.
 
-Further, we consider Continuous-block cross-validation to aid the model selection with varying smoothing length-scale for the base Kernel.
+Further, we consider Continuous-block cross-validation to aid the model selection with varying smoothing length-scale for the base kernel.
 
 # Repo Structure
 
