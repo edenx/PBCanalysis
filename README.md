@@ -25,7 +25,7 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
   - [ ] Stratified CBCV, exploting the block structure of kernel.
 - [ ] Spatial random effect: 
   - [ ] Inlcude the GP as an MVN in modelling the random effect; 
-  - [ ] Should consider also the joint optimisation of structured cariance and noise variance.
+  - [ ] Should consider also the joint optimisation of structured variance and noise variance.
 - [ ] Simulation study: 
   - [ ] continuous LGCP or inhomogenous Poission?
   - [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
