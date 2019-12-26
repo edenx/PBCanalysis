@@ -7,7 +7,7 @@ check.0 <- function(x) {
 }
 
 # distance matrix between cells within two regions A, B
-vectorized_pdist <- function(A, B){
+vectorised_pdist <- function(A, B){
         an <- apply(A, 1, function(rvec) crossprod(rvec,rvec))
         bn <- apply(B, 1, function(rvec) crossprod(rvec,rvec))
         
@@ -23,7 +23,7 @@ vectorized_pdist <- function(A, B){
 # nu any in c(5, 3, 1, "inf")
 Matern.ker <- function(coord1, coord2, alpha, nu){
         # dim: nrow(coord1) x nrow(coord2)
-        d <- vectorized_pdist(coord1, coord2)
+        d <- vectorised_pdist(coord1, coord2)
         
         if(!nu %in% c(1, 3, 5, "inf")){
                 errorCondition("choose appropriate nu in k52, k32, k12, inf")
