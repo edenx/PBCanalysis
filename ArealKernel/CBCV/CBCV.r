@@ -5,11 +5,14 @@ library(tidyverse)
 library(dplyr)
 library(reshape2)
 library(ggplot2)
+source("RFFfunc.R")
 
+pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
+PBC <- st_as_sf(PBCshp)
+PBC_df <- PBC %>% st_set_geometry(NULL)
 # ---------------------------------------------------------------------------------------- #
 #                               Extending LOO to CBLOO       
 # ---------------------------------------------------------------------------------------- #
-
 # Extending LOO to CBLOO
 # If randomly drawn from set of regions, set index=NULL by default
 # If deterministic (i.e. loop over entire set of regions), index must be taken
@@ -107,14 +110,12 @@ CBLOO_perc_stra <- function(x, dat, lambda=10, stratified=FALSE, level=NULL){
         mat_neighbour <- poly2nb(dat)
         dat_rmgeom <- dat %>% st_set_geometry(NULL) %>% mutate(index=1:n)
         
-        # find the number of neighbours for each region
         freq_neighbour <- sapply(mat_neighbour, length)
-        # find the number of regions to directly sample from
-        # take mean of random draw of lambda as the estimate of the number of neighbours
         samp_reg <- nrow(dat)*x/round(mean(sample(freq_neighbour,lambda))+1)
         
-        # sample from the regions and take along with the neighbours
         if(stratified){
+                # reconstruct the district name and the district code into two cols
+                # "district name" "code"
                 split_char <- strsplit(as.character(level), '[[:space:]]')
                 lab_reg <- sapply(split_char, 
                                   function(x) c(paste0(x[-length(x)], collapse=""),x[length(x)]))
@@ -122,6 +123,8 @@ CBLOO_perc_stra <- function(x, dat, lambda=10, stratified=FALSE, level=NULL){
                         rename("District"=V1, "Code"=V2) %>%
                         mutate("index"=1:nrow(.))
                 
+                # stratified sampling 
+                # proportional to the number of regions within a district
                 prob_grp <- lab_reg_df %>% group_by(District, add=TRUE) %>% 
                         summarise(freq=length(index))
                 lab_reg_df_ <- merge(lab_reg_df, prob_grp, "District") %>% 
@@ -141,7 +144,6 @@ CBLOO_perc_stra <- function(x, dat, lambda=10, stratified=FALSE, level=NULL){
         dat_new <- dat
         dat_new[samp_neighbour, "X"] <- rep(NA, length(samp_neighbour))
         
-        # return(length(samp_neighbour))
         return(dat_new)
 }
 
