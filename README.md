@@ -23,9 +23,12 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
 - [ ] CBCV: 
   - [x] First, extending LOO strategy to include also neighbours;
   - [x] Try leaving out different percentages of the regions;
-  - [ ] Stratified CBCV, exploting the block structure of kernel.
+  - [x] Stratified CBCV, exploting the block structure of kernel.
+  - [ ] Implement with modelling procedure.
 - [ ] Spatial random effect: 
-  - [ ] Inlcude the GP as an MVN in modelling the random effect; 
+  - [ ] Inlcude the GP as an MVN in modelling the random effect;
+    - [ ] INLA
+    - [ ] Stan
   - [ ] Should consider also the joint optimisation of structured variance and noise variance.
 - [ ] Simulation study: 
   - [ ] continuous LGCP or inhomogenous Poission?
