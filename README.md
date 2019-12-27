@@ -21,8 +21,8 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
 
 ## Task List
 - [ ] CBCV: 
-  - [ ] First, extending LOO strategy to include also neighbours;
-  - [ ] Try leaving out different percentages of the regions;
+  - [x] First, extending LOO strategy to include also neighbours;
+  - [x] Try leaving out different percentages of the regions;
   - [ ] Stratified CBCV, exploting the block structure of kernel.
 - [ ] Spatial random effect: 
   - [ ] Inlcude the GP as an MVN in modelling the random effect; 
