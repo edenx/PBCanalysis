@@ -64,7 +64,7 @@ CBLOO_perc <- function(x, dat, nabla=2){
 blckrm.05 <- CBLOO_perc(0.05, PBC)
 plot_pred(blckrm.05$X, NULL, PBC)
 
-# -------------------------------- sample with replacement ---------------------------------
+# -------------------------------- sample with 1 draw ---------------------------------
 # lambda is the number of samples to be drawn for estimating the number of neibours
 # how do we make sure that the proportion is roughly what we want?
         # 
@@ -75,8 +75,8 @@ CBLOO_perc_1 <- function(x, dat, lambda=10){
         # find the number of neighbours for each region
         freq_neighbour <- sapply(mat_neighbour, length)
         # find the number of regions to directly sample from
-        # take mean of random draw of nabla as the estimate of the number of neighbours
-        samp_reg <- nrow(dat)*x/round(mean(sample(freq_neighbour,nabla))+1)
+        # take mean of random draw of lambda as the estimate of the number of neighbours
+        samp_reg <- nrow(dat)*x/round(mean(sample(freq_neighbour,lambda))+1)
         
         # sample from the regions and take along with the neighbours
         samp <- sample(dat_rmgeom[,"index"],round(samp_reg))
@@ -102,8 +102,49 @@ plot_pred(blckrm.05$X, NULL, PBC)
 
 
 # ---------------------------------- Stratified scheme -----------------------------------
-split_char <- strsplit(as.character(PBC$LSOA04NM), '[[:space:]]')
-lab_reg <- sapply(split_char, function(x) c(paste0(x[-length(x)], collapse=""),x[length(x)]))
-lab_reg_df <- t(lab_reg) %>% as.data.frame(.) %>% 
-        rename("District"=V1, "Code"=V2) %>%
-        mutate("index"=1:nrow(.))
+# Sample with 1 draw
+CBLOO_perc_stra <- function(x, dat, lambda=10, stratified=FALSE, level=NULL){
+        mat_neighbour <- poly2nb(dat)
+        dat_rmgeom <- dat %>% st_set_geometry(NULL) %>% mutate(index=1:n)
+        
+        # find the number of neighbours for each region
+        freq_neighbour <- sapply(mat_neighbour, length)
+        # find the number of regions to directly sample from
+        # take mean of random draw of lambda as the estimate of the number of neighbours
+        samp_reg <- nrow(dat)*x/round(mean(sample(freq_neighbour,lambda))+1)
+        
+        # sample from the regions and take along with the neighbours
+        if(stratified){
+                split_char <- strsplit(as.character(level), '[[:space:]]')
+                lab_reg <- sapply(split_char, 
+                                  function(x) c(paste0(x[-length(x)], collapse=""),x[length(x)]))
+                lab_reg_df <- t(lab_reg) %>% as.data.frame(.) %>% 
+                        rename("District"=V1, "Code"=V2) %>%
+                        mutate("index"=1:nrow(.))
+                
+                prob_grp <- lab_reg_df %>% group_by(District, add=TRUE) %>% 
+                        summarise(freq=length(index))
+                lab_reg_df_ <- merge(lab_reg_df, prob_grp, "District") %>% 
+                        mutate(prob=freq/nrow(.))
+                lab_reg_df_ <- lab_reg_df_[order(lab_reg_df_$index),]
+                
+                samp <- sample(lab_reg_df_$index, round(samp_reg), prob=lab_reg_df_$prob)
+                
+        }else{
+                samp <- sample(dat_rmgeom$index, round(samp_reg))
+        }
+        samp_neighbour <- c(samp, unlist(sapply(samp, 
+                                                function(x) mat_neighbour[[x]])))
+        samp_neighbour <- unique(samp_neighbour)
+        
+        # update the data
+        dat_new <- dat
+        dat_new[samp_neighbour, "X"] <- rep(NA, length(samp_neighbour))
+        
+        # return(length(samp_neighbour))
+        return(dat_new)
+}
+
+# visualise the new data
+blckrm.05 <- CBLOO_perc_stra(0.10, PBC, lambda=10, stratified=TRUE, level=PBC$LSOA04NM)
+plot_pred(blckrm.05$X, NULL, PBC)
