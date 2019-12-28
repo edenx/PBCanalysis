@@ -129,7 +129,7 @@ toc()
 # hmmm the loglik looks funny... whyyyyyy
 plot(alphas, unlist(post_output$marloglik), type="l")
 
-sapply(post_output$summary.fitted.value, function(x) plot_pred(x[,1], NULL, compare=TRUE, count))
+sapply(post_output$summary.fitted.value, function(x) plot_pred(x[,1], NULL, PBC, compare=TRUE, count))
 
         # ====================================================================== #
         #                   Evaluate the result with some metrics                #
@@ -137,13 +137,13 @@ sapply(post_output$summary.fitted.value, function(x) plot_pred(x[,1], NULL, comp
 
 # PLOT:: spatial prediction with the ridge glm selected lengthscale
 # plot_pred(exp(stan_mod$linear.predictors))
-plot_pred(colMeans(yrep_), round(best_alpha, 2))
+plot_pred(colMeans(yrep_), round(best_alpha, 2), PBC)
 bias(yrep_)
 rmse(yrep_)
 cp95(yrep_)
 
 for(i in 1:length(alphas)){
-        plot(plot_pred(post_output$summary.fitted.value[[i]][,1], alphas[i]
+        plot(plot_pred(post_output$summary.fitted.value[[i]][,1], alphas[i], PBC
                        # , compare=FALSE
                        ))
 }

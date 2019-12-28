@@ -216,10 +216,10 @@ plot_hist <- function(pred, alpha){
 }
 
 # prediction: spatial plot
-plot_pred <- function(pred, ls, compare=FALSE, count=NULL){
+plot_pred <- function(pred, ls, sf_geom, compare=FALSE, count=NULL){
         
         if(compare){
-                sf_pred <- PBC[, "geometry"] %>% 
+                sf_pred <- sf_geom[, "geometry"] %>% 
                         mutate(pred=pred, count=count)
                 
                 pop_ <- ggplot() + 
@@ -236,7 +236,7 @@ plot_pred <- function(pred, ls, compare=FALSE, count=NULL){
                 
                 gridExtra::grid.arrange(pop_, pred_, nrow=2)
         }else{
-                sf_pred <- PBC[, c("geometry")] %>% 
+                sf_pred <- sf_geom[, c("geometry")] %>% 
                         mutate(pred=pred)
                 
                 pred_ <- ggplot() + 

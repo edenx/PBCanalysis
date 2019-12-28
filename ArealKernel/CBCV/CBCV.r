@@ -1,3 +1,5 @@
+# Inversely weighted by the number of neighbours (to avoid too many blocks to be selected)?
+# Any justification for that?
 library(spdep)
 library(SDALGCP)
 library(sf)
@@ -61,8 +63,6 @@ CBLOO_perc <- function(x, dat, nabla=2){
         
         # return(length(samp_neighbour))
         return(dat_new)
-        # fit the model in INLA (this gives immediate prediction for the NAs)
-        # CV error for prediction of the left out block
 }
 blckrm.05 <- CBLOO_perc(0.05, PBC)
 plot_pred(blckrm.05$X, NULL, PBC)
@@ -95,7 +95,7 @@ CBLOO_perc_1 <- function(x, dat, lambda=10){
 }
 
 # visualise the new data
-blckrm.05 <- CBLOO_perc_1(0.15, PBC, 10)
+blckrm.05 <- CBLOO_perc_1(0.05, PBC, 10)
 plot_pred(blckrm.05$X, NULL, PBC)
 
 # # Can verify that the the mean of the number of left out reg is around x*n
@@ -105,7 +105,7 @@ plot_pred(blckrm.05$X, NULL, PBC)
 
 
 # ---------------------------------- Stratified scheme -----------------------------------
-# Sample with 1 draw
+# Sample with 1 draw as above
 CBLOO_perc_stra <- function(x, dat, lambda=10, stratified=FALSE, level=NULL){
         mat_neighbour <- poly2nb(dat)
         dat_rmgeom <- dat %>% st_set_geometry(NULL) %>% mutate(index=1:n)
