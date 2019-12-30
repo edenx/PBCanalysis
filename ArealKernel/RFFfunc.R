@@ -52,15 +52,14 @@ Region.ker <- function(wcentr1, wcentr2, alpha, nu=5){
         t(weight1) %*% base.ker %*% weight2
 }
 
-
 sim.regker <- function(lis_region, alpha, nu=5, plot=FALSE){
         # parallel the outer for loop
         require(parallel)
         no_cores <- detectCores() - 1
         cl <- makeCluster(no_cores, type="FORK")
         
-        Kernel <- parSapply(cl, lis_region, 
-               function(region) parSapply(lis_region, Region.ker, region, alpha, nu))
+        Kernel <- parSapply(cl, lis_region, function(region) 
+                sapply(lis_region, Region.ker, region, alpha, nu))
         stopCluster(cl)
         
         if(plot){
