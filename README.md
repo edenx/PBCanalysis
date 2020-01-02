@@ -17,7 +17,7 @@ Further, we consider Continuous-block cross-validation to aid the model selectio
 
 # Repo Structure
 
-The functions for main construction steps can be found in `/ArealKernel/RFFfunc.R`. The analysis using models with Stan and INLA can be found in `/ArealKernel/FullAnalysis.R`. The exploratory analysis of the block-structure incured from the kernel can be found in `/ArealKernel/FindBlocks.R`, and the produced plots can be found in `/ArealKernel/BlockPlots`. There is also ongoing implementation with spatial random effect model in `/ArealKernel/SpatialRE`, borrwoing the same construction idea for BYM2 model. Ongoing implementation of Continuous-block CV can be found in `/ArealKernel/CBCV`.
+The functions for main construction steps can be found in `/ArealKernel/RFFfunc.R`. The analysis using models with Stan and INLA can be found in `/ArealKernel/FullAnalysis.R`. The exploratory analysis of the block-structure incured from the kernel can be found in `/ArealKernel/FindBlocks.R`, and the produced plots can be found in `/ArealKernel/BlockPlots`. There is also ongoing implementation with spatial random effect model in `/ArealKernel/SpatialRE`, borrwoing the same construction idea for BYM2 model, so we name it BYM3. Ongoing implementation of Continuous-block CV can be found in `/ArealKernel/CBCV`.
 
 ## Task List
 - [ ] CBCV: 
