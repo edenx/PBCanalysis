@@ -11,8 +11,7 @@ M <- spdep::poly2nb(PBC) %>%
 colnames(M) <- rownames(M)
 
 #' Scaled precision matrix for BYM2
-Q  <- inla.scale.model(diag(rowSums(M)) - M,
-                       constr = list(A = matrix(1, 1, nrow(M)), e = 0))
+
 
 f_inla <- inla(PBC$X ~ f(seq_along(M[1,]), model = "bym2", graph = M),
                family = "binomial", data = PBC, Ntrials = nrow(PBC),

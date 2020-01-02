@@ -3,6 +3,7 @@ library(sp)
 library(spdep)
 library(SDALGCP)
 library(sf)
+library(INLA)
 
 source("RFFfunc.R")
 
@@ -23,8 +24,23 @@ PBC.form <- as.formula(paste("X", paste(c("Income", "Crime", "Environment",
 PBC.form_ <- X ~ 1
 
 tic()
+# ICAR component as spatial effect
 PBC.bym <- inla(update(PBC.form, . ~. +
-                                  f(ID, model="bym2", graph=W.PBC, 
+                                   f(ID, model="bym2", graph=W.PBC, 
+                                     scale.model=TRUE, constr=TRUE)), 
+                    data=PBC_df.bym, 
+                    family="poisson", E=exposure, 
+                    control.compute=list(dic=TRUE, waic=TRUE, cpo=TRUE),
+                    control.predictor=list(compute = TRUE)
+)
+toc()
+plot_pred(PBC.bym$summary.fitted.values[,1], "NULL", PBC, compare=TRUE, count)
+
+
+tic()
+# using the MVN with aggregated kernel as the spatial effect
+PBC.ker <- inla(update(PBC.form, . ~. +
+                                  f(ID, model="bym2", graph=inv_regker, 
                                     scale.model=TRUE, constr=TRUE)), 
                 data=PBC_df.bym, 
                 family="poisson", E=exposure, 
@@ -32,25 +48,4 @@ PBC.bym <- inla(update(PBC.form, . ~. +
                 control.predictor=list(compute = TRUE)
                    )
 toc()
-
-plot_pred(PBC.bym$summary.fitted.values[,1], "NULL", PBC, compare=TRUE, count)
-
-
-# # Fitting instead with `gemeric3` r.e.
-# Q  <- inla.scale.model(diag(rowSums(M)) - M,
-#                        constr=list(A = matrix(1, 1, nrow(M)), e=0))
-# tic()
-# PBC.gen3 <- inla(update(PBC.form, . ~. +
-#                                f(ID, model="generic3", 
-#                                  Cmatrix=list(Q+diag(nrow(W.PBC)), Q),
-#                                  hyper=list(theta11=list(initial=log(1/30000))))), 
-#                 data=PBC_df.bym, 
-#                 family="poisson", E=exposure, 
-#                 control.compute=list(dic=TRUE, waic=TRUE, cpo=TRUE),
-#                 control.predictor=list(compute = TRUE)
-# )
-# toc()
-# summary(PBC.gen3)
-# 
-# plot_pred(PBC.gen3$summary.fitted.values[,1], "NULL", PBC, compare=TRUE, count)
-# 
+plot_pred(PBC.ker$summary.fitted.values[,1], "NULL", PBC, compare=TRUE, count)

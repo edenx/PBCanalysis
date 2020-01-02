@@ -87,13 +87,14 @@ rff.region <- function(wcentr, Omega, m, alpha){
 
 # using the inversion -- quasi monte carlo integration;
 # Matern 5-2 kernel -- student 5-2 sdf
-sim_rff <- function(lis_region, m=100, nu=5, alpha, plot=FALSE){
+sim.rff <- function(lis_region, m=100, nu=5, alpha, plot=FALSE){
         Omega <- qt(halton(m,2), nu)
         Phi <- t(sapply(lis_region, rff.region, Omega, m, alpha))
         
         Kernel <- Phi %*% t(Phi)
         if(plot){
                 print(lattice::levelplot(Kernel))
+                return(as.matrix(Kernel))
         }
         
         return(as.matrix(Phi))

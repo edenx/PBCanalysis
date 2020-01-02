@@ -141,7 +141,7 @@ alpha = 0.01
 phi.u = 0.5
 phi.alpha = 2/3 ## prob(phi < phi.u) = phi.alpha
 
-phi.prior = INLA:::inla.pc.bym.phi(Q=Q, u= phi.u, alpha = phi.alpha)
+phi.prior = INLA:::inla.pc.bym.phi(Q = Q, u = phi.u, alpha = phi.alpha)
 values = (-9):110
 values = 1:100
 formula = Y ~ 1 + f(region,

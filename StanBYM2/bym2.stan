@@ -32,7 +32,7 @@ transformed parameters {
 model {
   // y ~ poisson_log(log_E + beta0 + x * beta1 + convolved_re * sigma);
   y ~ poisson_log(log_E + beta0 + convolved_re * sigma);
-
+  
   // This is the prior for phi! (up to proportionality)
   target += -0.5 * dot_self(phi[node1] - phi[node2]);
   // soft sum-to-zero constraint on phi)

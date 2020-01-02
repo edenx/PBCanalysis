@@ -1,0 +1,4 @@
+Informal Definition 1. A prior π(ξ) forces overfitting (or overfits) if the density of the prior is zero at the base model. A prior avoids overfitting if its density is decreasing with a maximum at the base model.
+
+Informal Definition 1 ensures that the probability in a small ball around ξ = 0 is larger than the probability in the corresponding ball around any other ξ0 ̸= 0. This can be seen as an absolutely continuous generalisation of the spike-and-slab concept.
+

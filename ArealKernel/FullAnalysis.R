@@ -46,11 +46,17 @@ count <- PBC$X
 # paralleled but still quite slow to compute (as a double for loop is required)
 # upshot: just use RFF with 100 features
 tic()
-sim.regker(lis_wcentr, alpha=0.4, plot=TRUE)
+regker <- sim.regker(lis_wcentr, alpha=0.4, plot=TRUE)
 toc()
 
 tic()
-sim_rff(lis_wcentr, alpha=0.4, plot=TRUE)
+inv_regker <- Matrix::solve(regker)
+toc()
+
+lattice::levelplot(inv_regker)
+
+tic()
+rffker <- sim.rff(lis_wcentr, alpha=0.4, plot=TRUE)
 toc()
 
         # ====================================================================== #
@@ -66,7 +72,7 @@ lis_Phi_ <- list()
 for(i in 1:length(alphas)){
         alpha <- alphas[i]
         
-        lis_Phi.null[[i]] <- sim_rff(lis_wcentr, alpha=alpha)
+        lis_Phi.null[[i]] <- sim.rff(lis_wcentr, alpha=alpha)
         
         lis_Phi[[i]] <-  lis_Phi.null[[i]] %>% as.data.frame() %>%
                 dplyr::mutate(count=PBC_df$X)

@@ -1,0 +1,8 @@
+### Olatunji 2019
+
+* The computation of the averaged kerenel involves randomly sampling from non-homogenous Poisson with inhibition stopping rule; 
+** Is this a non-homogenous Poisson Process? Or is it just a way of doing the imputation.
+** The method adopted for doing integration involves sample according to the weight of cells, and a stopping criterion (sampling quadrature points); however, we are not interested in the possible position of observed data as we are taking an average over the entire region (we only interested in deriving the regional kernel), therefore grid integration suffices with the ambient kernel evaluated with centroids of cells.
+** However, one issue is that we may have empty cells with no generated points from the Olatunji's method, however we do evaluate for every cells when doing grid integration. So the resulting kernel may be smoother: necessary to tune the lengthscale of the ambient kernel.
+
+* The computation of the kernel is not deterministic, as it requires sampling from the inhibitory process; on the other hand, the grid integration is deterministic. Since the inference procedure does not require update from the kernel, there is no need to 

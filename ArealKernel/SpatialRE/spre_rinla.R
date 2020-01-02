@@ -7,17 +7,23 @@ library(INLA)
 
 source("RFFfunc.R")
 
+pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
+PBC <- st_as_sf(PBCshp)
+PBC_df <- PBC %>% st_set_geometry(NULL)
+exposure <- PBC_df$pop/pop_den_reg
+
 # Can we incorporate bym2 framework into INLA for the derived spatial random effect f~MVN ???
 # Can use Stan tho...
 # worth a try...
 
-## Yes with mixed effect generic3, 
-## but need to figure out the scaling and prior selection
+## Naive implementation below: individual iid and spatial r.e., 
+## with no common param controlling variance
+## need to figure out the scaling and prior selection
 
 inla_reg.meff <- function(Phi, mat_desn, form, Cmat, offset_){
         fit <- inla(
                 update(form,. ~. + f(ID, model = "z", Z=Phi, Cmatrix=Cmat) 
-                       # + f(ID_c, model="iid")
+                       + f(ID_c, model="iid")
                        ),
                 data=mat_desn, family = "poisson", E=offset_,
                 control.predictor = list(compute=TRUE))
@@ -32,18 +38,32 @@ inla_reg.meff <- function(Phi, mat_desn, form, Cmat, offset_){
 
 # use mixed random effect for INLA
 PBC_df.desn <- PBC_df %>% 
-        mutate(ID=1:nrow(.), count=.$X) %>%
-        dplyr::select(ID, count, Income, Crime, Environment, Employment, 
+        mutate(ID=1:nrow(.), ID_c=1:nrow(.), count=.$X) %>%
+        dplyr::select(ID, ID_c, count, Income, Crime, Environment, Employment, 
                       Barriers, propmale, Education)
 # # offset
 # pop <- scale(PBC_df$pop, center=FALSE)
 
 # model formula
-lmod <- lm(count ~ .-ID, PBC_df.desn)
+lmod <- lm(count ~ .-ID-ID_c, PBC_df.desn)
 form <- formula(lmod)
 Cmat <- diag(rep(1, ncol(lis_Phi.null[[1]])))
+# try fitting with lengthscale=0.4
+mat_desn <- PBC_df.desn
+offset_ <- exposure
+Phi <- lis_Phi.null[[which(abs(alphas-0.4)<0.01)]]
+fit.4 <- inla(
+        update(form,. ~. + f(ID, model = "z", Z=Phi, Cmatrix=Cmat) 
+               + f(ID_c, model="iid")
+        ),
+        data=mat_desn, family = "poisson", E=offset_,
+        control.compute=list(dic=TRUE, waic=TRUE, cpo=TRUE),
+        control.predictor = list(compute=TRUE))
+plot_pred(fit.4$summary.fitted.values[,1], 0.4, PBC, compare=TRUE, count)
 
-# model fitting
+
+
+# model fitting with multiple lengthscale
 tic()
 require(parallel)
 no_cores <- detectCores() - 1
