@@ -27,8 +27,8 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
   - [ ] Implement with modelling procedure.
 - [ ] Spatial random effect: 
   - [ ] Inlcude the GP as an MVN in modelling the random effect;
-    - [ ] INLA
-    - [ ] Stan
+    - [x] INLA (fitting directly with the inverse aggregated kernel works well, but is it robust?)
+    - [ ] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave)
   - [ ] Should consider also the joint optimisation of structured variance and noise variance.
 - [ ] Simulation study: 
   - [ ] continuous LGCP or inhomogenous Poission?
