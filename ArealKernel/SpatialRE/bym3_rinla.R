@@ -5,8 +5,7 @@ library(SDALGCP)
 library(sf)
 library(INLA)
 
-source("RFFfunc.R")
-
+# The regular BYM2 model ----------------------------------------------------------------------
 pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
 
@@ -36,9 +35,12 @@ PBC.bym <- inla(update(PBC.form, . ~. +
 toc()
 plot_pred(PBC.bym$summary.fitted.values[,1], "NULL", PBC, compare=TRUE, count)
 
+# using the MVN with aggregated kernel as the spatial effect ------------------------------------
+ls <- 0.4
+regker <- create_ker(ls, PBCshp, pop_den, plot=TRUE)
+inv_regker <- Matrix::solve(regker)
 
 tic()
-# using the MVN with aggregated kernel as the spatial effect
 PBC.ker <- inla(update(PBC.form, . ~. +
                                   f(ID, model="bym2", graph=inv_regker, 
                                     scale.model=TRUE, constr=TRUE)), 
