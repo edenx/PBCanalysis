@@ -30,12 +30,12 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
     - [x] INLA (fitting directly with the precision matrix of aggregated kernel works well, but is it robust?)
     - [ ] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
 - [ ] HIV data: Malawi 
+  - [ ] fine grained population density of the region: data souce?
   - [ ] test with the new data set, see if has established reproducible procedure.
 - [ ] Simulation study: 
   - [ ] continuous LGCP or inhomogenous Poission?
   - [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
   - [ ] Model comparison with CBCV and Marginal Loglik.
-
 
 ## References
 <a name="fnt1">1</a>: Johnson, O. O., Diggle, P., & Chicas, E. G. (2019). A Spatially Discrete Approximation to Log-Gaussian Cox Processes for Modelling Aggregated Disease Count Data. Retrieved from https://arxiv.org/pdf/1901.09551.pdf
