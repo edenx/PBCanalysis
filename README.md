@@ -29,6 +29,8 @@ The functions for main construction steps can be found in `/ArealKernel/RFFfunc.
   - [ ] Inlcude the GP as an MVN in modelling the random effect;
     - [x] INLA (fitting directly with the inverse aggregated kernel works well, but is it robust?)
     - [ ] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
+- [ ] HIV data: Malawi 
+  - [ ] test with the new data set, see if has established reproducible procedure.
 - [ ] Simulation study: 
   - [ ] continuous LGCP or inhomogenous Poission?
   - [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
