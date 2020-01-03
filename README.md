@@ -24,12 +24,12 @@ There is also ongoing implementation with spatial random effect model (BYM3 as d
 
 The exploratory analysis of the block-structure incured from the kernel can be found in `/ArealKernel/FindBlocks.R`, and the produced plots can be found in `/ArealKernel/BlockPlots`. 
 
-# Concerns Raised
+## Concerns Raised
 
 * Although direct implementation of BYM3 in INLA gives great result, the specification requires, however, the precision matrix of a PSD covariance matrix. 
     * By using basis approximation (RFF), the covariance matrix is rendered non-PSD (and not full rank), therefore no inverse existed. 
     * It may be better using a more flexible framework, i.e. Stan. However, the stochasticity nature of HMC may be less efficient for inference comparing to INLA.
-* Moreover, the calculation of complete aggregated kernel is time consuming, therefore not scalable for aggregation to a finer granularity, moreover unsuitable for the follow-up model selection.
+* Moreover, the calculation of complete aggregated kernel is time consuming, therefore not scalable for aggregation to a finer granularity, and unsuitable for the follow-up model selection.
 
 ## Task List
 - [ ] CBCV: 
