@@ -15,7 +15,7 @@ With the belief of continuous latent risk surface as ground truth, simulation st
 1. Checking models behaves as expected, recovering preset parameters and interval coverage etc.
 2. Exploring effect of assumption violation in a systematic way. 
 
-Further, we consider Continuous-block cross-validation to aid the model selection with varying smoothing length-scale for the base kernel.
+Further, we consider Continuous-block cross-validation to aid model selection with varying smoothing length-scale for the base kernel.
 
 # Repo Structure
 
