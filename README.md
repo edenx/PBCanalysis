@@ -30,8 +30,10 @@ The exploratory analysis of the block-structure incured from the kernel can be f
     * By using basis approximation (RFF), the covariance matrix is rendered non-PSD (and not full rank), therefore no inverse existed. 
     * It may be better using a more flexible framework, i.e. Stan. However, the stochasticity nature of HMC may be less efficient for inference comparing to INLA.
 * Moreover, the calculation of complete aggregated kernel is time consuming, therefore not scalable for aggregation to a finer granularity, and unsuitable for the follow-up model selection.
+* Concern regarding CBCV: by selecting continuous blocks, we want to minimise the dependency between the neighbouring regions. However, what about the neibours of the left out neibouring regions?
 
 ## Task List
+
 - [ ] CBCV: 
     - [x] First, extending LOO strategy to include also neighbours;
     - [x] Try leaving out different percentages of the regions;
