@@ -1,6 +1,6 @@
 # Primary Objective
 
-This repo is to document the spatial disease risk analysis on several datasets, including `PBCshp`, containing PBC count and index of multiple deprivation, from the package `SDALGCP` <sup>[1](#fnt1)</sup>, and is first published in Taylor et al. (2015)<sup>[2](#fnt2)</sup>; HIV datasets from DHS surveys in Sub-Sahara countries (for access of the data, please register at [DHS](https://www.dhsprogram.com/)), and overlayed population density data is from HRSL<sup>[3](#fnt3)</sup>.  
+This repo is to document the spatial disease risk analysis on several datasets, including `PBCshp`, containing PBC count and index of multiple deprivation, from the package `SDALGCP` <sup>[1](#fnt1)</sup>, and is first published in Taylor et al. (2015)<sup>[2](#fnt2)</sup>; HIV datasets from DHS surveys in Sub-Sahara countries (for access of the data, please register at [DHS](https://www.dhsprogram.com/)), and overlayed population density data from HRSL<sup>[3](#fnt3)</sup>.  
 
 The analysis concerns primarily the implementation of the Kernel methods on aggregated LGCP model (at regional level). The objective of doing the analysis is to develop a scalable and reproducible procudure in doing modelling and inferences on continuous spatial risk (our primary concern). In doing this, we make comparison between the Markov random field based areal models (ICAR, BYM, BYM2), and discretised LGCP model in Johnson et al. (2019)<sup>[1](#fnt1)</sup>. 
 
