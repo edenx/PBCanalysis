@@ -7,7 +7,6 @@ The analysis concerns primarily the implementation of the Kernel methods on aggr
 The implementation is done in Bayesian frameworks with Stan and INLA (possibly TMB). We consider two approaches for the GP based model. The first concerns the weight space view of GP, from which GLM model can be directly implemented with its basis functions, which, in our implementation, is approximated by a finite set of Random Fourier Features (RFF). The second approach borrows from the BYM2 model structure, where spatial random effect component employs GP (MVN for a sample) instead of ICAR. We therefore refer this approach as BYM3. Notably, when constructing the kernel, grid integration is used for approximating kernel aggregation on regions (instead of sampling quadrature points from point process).
 
 Other assumptions are made for the practical analysis due to the limitation of the data and storage capacity, 
-* Common assumption of doing spatial modelling;
 * Continuity is assumed despite discrete representation on a grid. e.g. population density with certain granularity (on a grid) are assumed to be aggregated from continuous ground truth; 
 * Things to add.
 
@@ -15,7 +14,7 @@ With the belief of continuous latent risk surface as ground truth, simulation st
 1. Checking models behaves as expected, recovering preset parameters and interval coverage etc.
 2. Exploring effect of assumption violation in a systematic way. 
 
-Further, we consider Continuous-block cross-validation to aid model selection with varying smoothing length-scale for the base kernel.
+Further, we consider Continuous-block cross-validation to aid model selection with varying smoothing lengthscales for the base kernel.
 
 # Repo Structure
 
