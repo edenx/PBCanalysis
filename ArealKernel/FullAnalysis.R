@@ -10,13 +10,21 @@ library(glmnet)
 library(dplyr)
 library(reshape2)
 
-source("RegKernelFunc.r")
+setwd("~/Documents/PBCanalysis")
+source("ArealKernel/Functions/WrapperFunc.R")
+source("ArealKernel/Functions/ModelsFunc.R")
+source("ArealKernel/Functions/EvaluationMetrics.R")
+
+# load data
+load("ArealKernel/SpatialData/PBCshp.Rdata")
+load("ArealKernel/SpatialData/pop_nut.Rdata")
+
 
         # ====================================================================== #
         #       find empirical population density distribution per polygon
         # ====================================================================== #
 
-pop_den_ <- raster::intersect(pop_den, PBCshp) %>% replace_na(0)
+pop_den_ <- raster::intersect(pop_nut, PBCshp) %>% replace_na(0)
 PBC <- st_as_sf(PBCshp)
 PBC_df <- PBC %>% st_set_geometry(NULL)
 

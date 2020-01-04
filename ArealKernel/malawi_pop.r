@@ -61,3 +61,6 @@ inla.fit_bym3 <- inla(inla_form,
 toc()
 plot_pred(inla.fit_bym3$summary.fitted.values[,1], ls, df, compare=TRUE, df$est)
 summary(inla.fit_bym3)
+
+
+

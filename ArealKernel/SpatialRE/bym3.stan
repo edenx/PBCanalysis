@@ -20,7 +20,7 @@ parameters {
   real<lower=0, upper=1> rho; // proportion unstructured vs. spatially structured variance
 
   vector[N] theta;            // unstructured effect
-  vector[N] phi;              // spatial effects
+  vector[l] phi;              // spatial effects
 }
 transformed parameters {
   vector[N] convolved_re;
