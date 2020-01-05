@@ -28,7 +28,7 @@ The exploratory analysis of the block-structure incured from the kernel can be f
 * Although direct implementation of BYM3 in INLA gives great result, the specification requires, however, the precision matrix of a PSD covariance matrix. 
     * By using basis approximation (RFF), the covariance matrix is rendered non-PSD (and not full rank), therefore no inverse existed. 
     * It may be better using a more flexible framework, i.e. Stan. However, the stochasticity nature of HMC may be less efficient for inference comparing to INLA.
-* How to set prior in Stan???
+* How to set prior in Stan?? Reconstruct the PC prior?
 * Concern regarding CBCV: by selecting continuous blocks, we want to minimise the dependency between the neighbouring regions. However, what about the neighbours of the left out neighbouring regions?
 
 ## Task List
