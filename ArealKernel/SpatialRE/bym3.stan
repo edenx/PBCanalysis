@@ -5,8 +5,8 @@ data {
   
   vector<lower=0>[N] E;         // exposure
   // matrix[N,7] x;                    // predictor
-  int<lower=0> l;               // number of Fourier features
-  matrix[N,l]  L;               // Cholesky decomposition of covariance matrix
+  // int<lower=0> l;               // number of Fourier features
+  matrix[N,N]  L;               // Cholesky decomposition of covariance matrix
   
 }
 transformed data {
@@ -20,7 +20,7 @@ parameters {
   real<lower=0, upper=1> rho; // proportion unstructured vs. spatially structured variance
 
   vector[N] theta;            // unstructured effect
-  vector[l] phi;              // spatial effects
+  vector[N] phi;              // spatial effects
 }
 transformed parameters {
   vector[N] convolved_re;

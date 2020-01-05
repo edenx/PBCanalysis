@@ -34,7 +34,7 @@ regcovar <- select(df_dat, Income, Crime, Environment, Employment,
 alphas <- seq(0.2, 1, length.out = 30)
 
 tic()
-all.lis_Phi <- precomp_ker(PBCshp, pop_nut, alphas=alphas, RFF=TRUE, m=100,
+all.lis_Phi <- precomp_ker(PBCshp, pop_den, alphas=alphas, RFF=TRUE, m=100,
                        if_response=TRUE, response=count,
                         if_regcovar=TRUE, regcovar=regcovar)
 toc()
@@ -47,10 +47,11 @@ lis_Pho.covar <- all.lis_Phi[[3]]
 # it takes a long time to compute the full kernel, but only needs to compute once
 # if the CBCV directly set the left out region's entries as 0
 tic()
-all.lis_Ker <- precomp_ker(PBCshp, pop_nut, alphas=alphas, 
+all.lis_Ker <- precomp_ker(PBCshp, pop_den, alphas=alphas, 
                            if_response=TRUE, response=count,
                            if_regcovar=TRUE, regcovar=regcovar)
 toc()
+# 2556.674 sec
 
 # --------------------------------------- GLM with RFF -----------------------------------------
 # Stan Fit with no covariates ------------------------------------------------------------------
@@ -111,7 +112,7 @@ tic()
 glm.inla_lis <- alpha_inla(lis_Phi.null, form, exposure, alphas, hist_plot=FALSE)
 toc()
 
-# hmmm the loglik looks funny... whyyyyyy
+# hmmm the loglik looks funny...
 plot(alphas, unlist(glm.inla_lis$marloglik), type="l")
 # sapply(glm.inla_lis$summary.fitted.value, function(x) plot_pred(x[,1], NULL, sf_dat, compare=TRUE, count))
 
@@ -149,7 +150,7 @@ toc()
 plot_pred(bym3.inlafit$summary.fitted.values[,1], ls, PBC, compare=TRUE, count)
 
 
-#-------------------------------------- MVN with RFF: Stan -------------------------------------
+# ---------------------------------- MVN with Full Kernel: Stan ---------------------------------
 
 # Stan fit with one lengthscale -----------------------------------------------------------------
 options(mc.cores = parallel::detectCores())
@@ -158,7 +159,8 @@ N <- as.integer(nrow(PBC))
 m <- 100
 l <- as.integer(2*m)
 count <- as.integer(count)
-mat.desgn <- lis_Phi.null[[8]]
+# mat.desgn <- lis_Phi.null[[8]]
+mat.desgn <- chol(all.lis_Ker[[1]][[8]])
 # flat exposure for now
 exposure <- rep_along(df_dat$pop, 1)
 
@@ -168,7 +170,8 @@ bym3.stanfit <- sampling(bym3.stan, data=list(N=N,y=count,E=exposure,l=l,L=mat.d
                      control = list(adapt_delta = 0.97), 
                      chains=3, warmup=6000, iter=8000, save_warmup=FALSE);
 toc()
-# 1651.485 sec elapsed
+# 1549.59 sec elapsed for RFF fit
+# 4734.68 sec elapsed for full kernel fit
 
 # inspect the model fitting
 shinystan::launch_shinystan(bym3.stanfit)
