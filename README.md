@@ -39,7 +39,7 @@ The exploratory analysis of the block-structure incured from the kernel can be f
     - [x] Stratified CBCV, exploting the block structure of kernel.
     - [ ] Implement with modelling procedure.
 - [x] Spatial random effect: 
-    - [x] Inlcude the GP as an MVN in modelling the random effect;
+    - [x] Use GP to model the random effect of MVN;
         - [x] INLA (fitting directly with the precision matrix of aggregated kernel works well, but is it robust?)
         - [x] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
     - [x] Investigate the effect of using RFF approximation for MVN r.e..
