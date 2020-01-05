@@ -38,13 +38,15 @@ The exploratory analysis of the block-structure incured from the kernel can be f
     - [x] Try leaving out different percentages of the regions;
     - [x] Stratified CBCV, exploting the block structure of kernel.
     - [ ] Implement with modelling procedure.
-- [ ] Spatial random effect: 
-    - [ ] Inlcude the GP as an MVN in modelling the random effect;
+- [x] Spatial random effect: 
+    - [x] Inlcude the GP as an MVN in modelling the random effect;
         - [x] INLA (fitting directly with the precision matrix of aggregated kernel works well, but is it robust?)
-        - [ ] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
+        - [x] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
+    - [x] Investigate the effect of using RFF approximation for MVN r.e..
 - [ ] HIV data: Malawi 
     - [x] fine grained population density of the region: data source -- Facebook HRSL.
     - [x] test with the new data set, see if has established reproducible procedure.
+    - [ ] build up the analysis file.
 - [ ] Simulation study: 
     - [ ] continuous LGCP or inhomogenous Poission?
 - [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
