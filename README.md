@@ -28,7 +28,7 @@ The exploratory analysis of the block-structure incured from the kernel can be f
 * Although direct implementation of BYM3 in INLA gives great result, the specification requires, however, the precision matrix of a PSD covariance matrix. 
     * By using basis approximation (RFF), the covariance matrix is rendered non-PSD (and not full rank), therefore no inverse existed. 
     * It may be better using a more flexible framework, i.e. Stan. However, the stochasticity nature of HMC may be less efficient for inference comparing to INLA.
-* Moreover, the calculation of complete aggregated kernel is time consuming, therefore not scalable for aggregation to a finer granularity, and unsuitable for the follow-up model selection.
+* How to set prior in Stan???
 * Concern regarding CBCV: by selecting continuous blocks, we want to minimise the dependency between the neighbouring regions. However, what about the neighbours of the left out neighbouring regions?
 
 ## Task List
@@ -41,7 +41,7 @@ The exploratory analysis of the block-structure incured from the kernel can be f
 - [x] Spatial random effect: 
     - [x] Use GP to model the random effect of MVN;
         - [x] INLA (fitting directly with the precision matrix of aggregated kernel works well, but is it robust?)
-        - [x] Stan (Catalina breaks rstan, so sad. Will try running on virtual machine with Mojave.)
+        - [x] Stan 
     - [x] Investigate the effect of using RFF approximation for MVN r.e..
 - [ ] HIV data: Malawi 
     - [x] fine grained population density of the region: data source -- Facebook HRSL.
