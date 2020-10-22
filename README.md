@@ -2,9 +2,9 @@
 
 The repo is to document the spatial disease risk analysis on several datasets, including `PBCshp`, containing PBC count and indices of multiple deprivations from the package `SDALGCP` <sup>[1](#fnt1)</sup>, which is first published in Taylor et al. (2015)<sup>[2](#fnt2)</sup>; HIV datasets from DHS surveys in Sub-Saharan African countries (for access of the data, please register at [DHS](https://www.dhsprogram.com/)), and overlayed population density data from HRSL<sup>[3](#fnt3)</sup>.  
 
-The analysis concerns primarily the implementation of the Kernel methods on aggregated LGCP model (at regional level). The objective is to develop a scalable and reproducible procudure in doing modelling and inferences on continuous spatial risk (our primary concern). In doing this, we make comparison between the Markov Random Field based areal models (ICAR, BYM, BYM2), and discretised LGCP model in Johnson et al. (2019)<sup>[1](#fnt1)</sup>. 
+The analysis concerns primarily the implementation of the Kernel methods on aggregated LGCP model (at regional level). The objective is to develop a scalable and reproducible procedure in doing modelling and inferences on continuous spatial risk (our primary concern). In doing this, we make comparison between the Markov Random Field based areal models (ICAR, BYM, BYM2), and discretised LGCP model in Johnson et al. (2019)<sup>[1](#fnt1)</sup>. 
 
-The implementation is done in Bayesian frameworks with Stan and INLA (possibly TMB). We consider two approaches for the GP based model. The first concerns the weight space view of GP, from which GLM model can be directly implemented with its basis functions, which, in our implementation, is approximated by a finite set of Random Fourier Features (RFF). The second approach borrows from the BYM2 model structure, where spatial random effect component employs GP (MVN for a sample) instead of ICAR. We therefore refer this approach as BYM3. Notably, when constructing the kernel, grid integration is used for approximating kernel aggregation on regions (instead of sampling quadrature points from point process).
+The implementation is done in Bayesian frameworks with Stan and INLA (possibly TMB). We consider two approaches for the GP based model. The first concerns the weight space view of GP, from which GLM model can be directly implemented with its basis functions, which, in our implementation, is approximated by a finite set of Random Fourier Features (RFF). The second approach borrows from the BYM2 model structure, where spatial random effect component employs GP (MVN for a sample) instead of ICAR. Notably, when constructing the kernel, grid integration is used for approximating kernel aggregation on regions (instead of sampling quadrature points from point process).
 
 Other assumptions are made for the practical analysis due to the limitation of the data and storage capacity, 
 * Continuity is assumed despite discrete representation on a grid. e.g. population density with certain granularity (on a grid) are assumed to be aggregated from continuous ground truth; 
@@ -29,28 +29,7 @@ The exploratory analysis of the block-structure incured from the kernel can be f
     * By using basis approximation (RFF), the covariance matrix is rendered non-PSD (and not full rank), therefore no inverse existed. 
     * It may be better using a more flexible framework, i.e. Stan. However, the stochasticity nature of HMC may be less efficient for inference comparing to INLA.
 * How to set prior in Stan?? Reconstruct the PC prior?
-* Concern regarding CBCV: by selecting continuous blocks, we want to minimise the dependency between the neighbouring regions. However, what about the neighbours of the left out neighbouring regions?
-
-## Task List
-
-- [ ] CBCV: 
-    - [x] First, extending LOO strategy to include also neighbours;
-    - [x] Try leaving out different percentages of the regions;
-    - [x] Stratified CBCV, exploting the block structure of kernel.
-    - [ ] Implement with modelling procedure.
-- [x] Spatial random effect: 
-    - [x] Use GP to model the random effect of MVN;
-        - [x] INLA (fitting directly with the precision matrix of aggregated kernel works well, but is it robust?)
-        - [x] Stan 
-    - [x] Investigate the effect of using RFF approximation for MVN r.e..
-- [ ] HIV data: Malawi 
-    - [x] fine grained population density of the region: data source -- Facebook HRSL.
-    - [x] test with the new data set, see if has established reproducible procedure.
-    - [ ] build up the analysis file.
-- [ ] Simulation study: 
-    - [ ] continuous LGCP or inhomogenous Poission?
-- [ ] Implement ICAR and BYM2 in INLA and Stan (straightforward code copying and pasting).
-- [ ] Model comparison with CBCV and Marginal Loglik, DIC.
+* Concern regarding CBCV: by selecting contiguous blocks, we want to minimise the dependency between the neighbouring regions. However, what about the neighbours of the left out neighbouring regions? On the other hand full Bayesian inference is expensive, any other way to tune hyperparameters?
 
 ## References
 <a name="fnt1">1</a>: Johnson, O. O., Diggle, P., & Chicas, E. G. (2019). A Spatially Discrete Approximation to Log-Gaussian Cox Processes for Modelling Aggregated Disease Count Data. Retrieved from https://arxiv.org/pdf/1901.09551.pdf
